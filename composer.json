@@ -1,0 +1,149 @@
+{
+    "name": "vehicletracker/app",
+    "description": "A comprehensive vehicle tracking and management system for Nigerian vehicles with ownership transfer capabilities",
+    "type": "project",
+    "keywords": [
+        "vehicle",
+        "tracking",
+        "nigeria",
+        "management",
+        "ownership",
+        "transfer",
+        "php",
+        "mvc"
+    ],
+    "homepage": "https://vehicletracker.com",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "Vehicle Tracker Team",
+            "email": "dev@vehicletracker.com",
+            "homepage": "https://vehicletracker.com",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "email": "support@vehicletracker.com",
+        "issues": "https://github.com/vehicletracker/app/issues",
+        "docs": "https://docs.vehicletracker.com"
+    },
+    "require": {
+        "php": "^8.0",
+        "ext-pdo": "*",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "ext-openssl": "*",
+        "ext-fileinfo": "*",
+        "vlucas/phpdotenv": "^5.4",
+        "phpmailer/phpmailer": "^6.6"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5",
+        "mockery/mockery": "^1.4",
+        "fakerphp/faker": "^1.19",
+        "squizlabs/php_codesniffer": "^3.6",
+        "phpstan/phpstan": "^1.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        },
+        "files": [
+            "app/Helpers/helpers.php",
+            "app/Helpers/validation.php",
+            "app/Helpers/email.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": [
+            "App\\Core\\ComposerScripts::postAutoloadDump"
+        ],
+        "post-install-cmd": [
+            "php -r \"if (!file_exists('.env')) { copy('.env.example', '.env'); }\"",
+            "App\\Core\\ComposerScripts::setupStorage"
+        ],
+        "post-update-cmd": [
+            "App\\Core\\ComposerScripts::setupStorage"
+        ],
+        "test": "phpunit",
+        "test-coverage": "phpunit --coverage-html coverage",
+        "lint": "phpcs --standard=PSR12 app/",
+        "lint-fix": "phpcbf --standard=PSR12 app/",
+        "analyze": "phpstan analyse app/ --level=5",
+        "setup": [
+            "@post-install-cmd",
+            "php -r \"if (!file_exists('storage/logs')) { mkdir('storage/logs', 0755, true); }\"",
+            "php -r \"if (!file_exists('public/assets/uploads')) { mkdir('public/assets/uploads', 0755, true); }\""
+        ],
+        "backup": "App\\Core\\ComposerScripts::backupDatabase",
+        "optimize": [
+            "composer dump-autoload -o",
+            "php -r \"if (file_exists('storage/cache')) { `rm -rf storage/cache/*`; }\""
+        ]
+    },
+    "scripts-descriptions": {
+        "test": "Run the test suite",
+        "test-coverage": "Run tests with code coverage report",
+        "lint": "Check code style against PSR-12",
+        "lint-fix": "Automatically fix code style issues",
+        "analyze": "Run static analysis with PHPStan",
+        "setup": "Setup application directories and permissions",
+        "backup": "Create database backup",
+        "optimize": "Optimize application performance"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        },
+        "platform-check": false
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://repo.packagist.org"
+        }
+    ],
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.0.x-dev"
+        },
+        "app-version": "1.0.0",
+        "build-date": "2024-01-01",
+        "supported-php-versions": [
+            "8.0",
+            "8.1",
+            "8.2",
+            "8.3"
+        ],
+        "requirements": {
+            "php": "8.0+",
+            "extensions": [
+                "pdo",
+                "json",
+                "mbstring",
+                "openssl",
+                "fileinfo"
+            ],
+            "server": "Apache 2.4+ or Nginx 1.18+",
+            "database": "MySQL 5.7+ or MariaDB 10.3+"
+        }
+    },
+    "suggest": {
+        "ext-gd": "For image processing and manipulation",
+        "ext-imagick": "For advanced image processing",
+        "ext-zip": "For export functionality and backups",
+        "ext-curl": "For HTTP requests and API integrations",
+        "ext-bcmath": "For precise mathematical operations",
+        "ext-intl": "For internationalization support"
+    }
+}
