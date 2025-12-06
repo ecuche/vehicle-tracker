@@ -74,7 +74,7 @@ ob_start();
                                     <input type="text" class="form-control" id="vin" name="vin" 
                                            value="<?= e($vehicle['vin'] ?? ''); ?>" required>
                                     <div class="form-text text-warning">
-                                        <i class="bi bi-lock me-1"></i>VIN cannot be changed
+                                        <i class="bi bi-lock me-1"></i>VIN should not be changed
                                     </div>
                                 </div>
                             </div>
@@ -87,6 +87,17 @@ ob_start();
                                            name="current_plate_number" 
                                            value="<?= e($vehicle['current_plate_number'] ?? ''); ?>">
                                     <div class="form-text">Current active plate number</div>
+                                </div>
+                            </div>
+                             <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="vehicle_color" class="form-label">
+                                        <strong>Vehicle Color</strong>
+                                    </label>
+                                    <input type="text" class="form-control" id="vehicle_color" 
+                                           name="vehicle_color" 
+                                           value="<?= e($vehicle['color'] ?? ''); ?>">
+                                    <div class="form-text">Current Vehicle Color</div>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -155,7 +166,7 @@ ob_start();
                                         <strong>Vehicle Status</strong>
                                     </label>
                                     <select class="form-select" id="current_status" name="current_status">
-                                        <option selected>Change Status</option>
+                                        <option value="" selected>Change Status</option>
                                         <option value="none">Normal</option>
                                         <option value="stolen">Stolen</option>
                                         <option value="no_customs_duty">No Customs Duty</option>
@@ -217,9 +228,7 @@ ob_start();
                                     <label class="form-label">
                                         <strong>Owner Email</strong>
                                     </label>
-                                    <div class="form-control bg-dark" id="current_owner_email">
-                                        <?= $user['email']; ?>
-                                    </div>
+                                    <input type="email" class="form-control bg-dark" id="current_owner_email" value="<?= $user['email']; ?>" disabled readonly>
                                 </div>
                             </div>
                         </div>
@@ -284,9 +293,7 @@ ob_start();
                                     <label class="form-label">
                                         <strong>New Owner Email</strong>
                                     </label>
-                                    <div class="form-control bg-dark" id="new_owner_email">
-                                        Email
-                                    </div>
+                                    <input type="email" class="form-control bg-dark" id="new_owner_email" placeholder="Email" readonly disabled>
                                 </div>
                             </div>
                         </div>
@@ -529,16 +536,28 @@ ob_start();
                     method: 'POST',
                     data : {field: field, value: value},
                     success: function(data) {
-                        var data = JSON.parse(data);
-                        new_name.text(data.name);
-                        new_nin.text(data.nin);
-                        new_phone.text(data.phone);
-                        new_email.text(data.email);
+                        if(data){
+                            var data = JSON.parse(data);
+                            new_name.text(data.name);
+                            new_nin.text(data.nin);
+                            new_phone.text(data.phone);
+                            new_email.val(data.email);
+                        }else{
+                            new_name.text('Full Name');
+                            new_nin.text('NIN');
+                            new_phone.text('Phone Number');
+                            new_email.val('');
+                        }
                     },
                     error: function() {
                         console.error('Failed to fetch Driver');
                     }
                 });
+            }else if(field === "" || !App.validateEmail(value) || !App.validateNIN(value) || !App.validatePhone(value) ){
+                new_name.text('Full Name');
+                new_nin.text('NIN');
+                new_phone.text('Phone Number');
+                new_email.val('');
             }
         });
     });
@@ -577,23 +596,25 @@ function initializeEditVehicleForm() {
 }
 
 function submitVehicleUpdate() {
+   
     const form = document.getElementById('editVehicleForm');
     const formData = new FormData(form);
     const submitBtn = document.getElementById('submitBtn');
     var id = $('#id').val();
     var vin = $('#vin').val();
+    var vehicle_color = $('#vehicle_color').val();
     var plate_number = $('#current_plate_number').val();
     var model_id = $('#vehicle_model').val();
     var year = $('#year').val();
     var status = $('#current_status').val();
     var reason = $('#status_reason').val();
-    var new_owner_email = $('#new_owner_email').text();
-    var current_owner_email = $('#current_owner_email').text();
+    var new_owner_email = $('#new_owner_email').val();
+    var current_owner_email = $('#current_owner_email').val();
 
     // Disable button and show loading
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<div class="spinner-border spinner-border-sm me-1"></div> Updating...';
-
+    
     $.ajax({
         type: "POST",
         url: form.action,
@@ -606,7 +627,8 @@ function submitVehicleUpdate() {
             current_status: status,
             status_reason: reason,
             new_owner_email: new_owner_email,
-            current_owner_email: current_owner_email
+            current_owner_email: current_owner_email,
+            vehicle_color: vehicle_color
 
         },
         success: function (response) {
@@ -618,7 +640,7 @@ function submitVehicleUpdate() {
                     window.location.reload();
                 }, 1500);
             } else {
-                App.showToast(data.error, 'danger');
+                App.showToast(data.error, 'error');
             }
         },
         error: function(error){

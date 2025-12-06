@@ -19,6 +19,7 @@ class ApiController extends Controller {
         $user = $this->user->findbyColumn($field, $value);
         if(!empty($field && !empty($value) && !empty($user))){
             echo json_encode($user);
+            exit;
         }
         exit;
     }
@@ -26,6 +27,7 @@ class ApiController extends Controller {
     public function updateVehicle(){
         $id = $_POST['id'];
         $vin = $_POST['vin'];
+        $vehicle_color = $_POST['vehicle_color'];
         $current_plate = $_POST['current_plate'];
         $vehicle_model_id  = $_POST['vehicle_model_id'];
         $year = $_POST['year'];
@@ -33,40 +35,83 @@ class ApiController extends Controller {
         $status_reason = $_POST['status_reason'];
         $new_owner_email = $_POST['new_owner_email'];
         $current_owner_email = $_POST['current_owner_email'];
-
-        $vehicle = $this->vehicle->findbyId( $id);
-        $plate = $this->plateNumber->findbyColumn(['plate_number'], $current_plate);
-        if(!empty($new_owner_email)){
-            $user = $this->user->findByEmail($new_owner_email);
-        }else{
-            $user = $this->user->findByEmail($current_owner_email);
-        }
-
-        if(!empty($plate)){
-            if($plate['id'] !== $vehicle['current_plate_id']){
-                echo json_encode(['error'=>'Plate Number is taken']);
+        $vehicle = $this->vehicle->findbyId($id);
+        $user = !empty($new_owner_email) ? 
+            $this->user->findByEmail($new_owner_email) : 
+            $this->user->findByEmail($current_owner_email);      
+        if(!empty($vehicle)){
+            if(!$this->validator::validateVIN($vin)){
+                echo json_encode(['error'=>'provide correct VIN format']);
+                exit;
+            }   
+            if(empty($user)){
+                echo json_encode(['error'=>'Driver could not be found']);
+                    exit;
+            }   
+            if(empty($current_plate)){
+                echo json_encode(['error'=>'Plate Number is required']);
                 exit;
             }
-        }else{
-            $plate = $this->plateNumber->insertAndGet([
-                'vehicle_id'=>$vehicle['id'],
-                'plate_number' => $current_plate
-            ]);
-        }
-        if(!empty($current_status) && empty($status_reason)){
-            echo json_encode(['error'=>'Change of status Reason is required']);
+            $plate = $this->plateNumber->findbyColumn('plate_number', $current_plate);
+            if(!empty($plate)){
+                if($plate['id'] !== $vehicle['current_plate_id']){
+                    echo json_encode(['error'=>'Plate Number is taken']);
+                    exit;
+                }
+            }
+            if((($current_status === "") && ($status_reason !== "")) || 
+                (($current_status !== "") && ($status_reason === "")))
+            {
+                echo json_encode(['error'=>'Change of status/Reason is required']);
+                exit;
+            }
+
+            if(!empty($status_reason)){
+                 $status =  $this->vehicleStatusHistory->insertAndGet([
+                    'vehicle_id'=> $vehicle['id'],
+                    'status'=> $current_status,
+                    'status_reason'=>$status_reason
+                ]);
+            }else{
+                $status = [
+                    'id' => $vehicle['current_status_id'],
+                    'status' => $vehicle['current_status']
+                ];
+            }
+            if(empty($plate)){
+                $this->plateNumber->update(['is_current'=> 0], ['vehicle_id'=>$vehicle['id']]);
+                $plate = $this->plateNumber->insertAndGet([
+                    'vehicle_id'=>$vehicle['id'],
+                    'plate_number' => $current_plate
+                ]);
+            }else{
+                $plate = [
+                    'id'=>$vehicle['current_plate_id'],
+                    'plate_number' => $vehicle['current_plate']
+                ];
+            }
+            
+            $data = [
+                'vin' => $vin,
+                'user_id' => $user['id'],
+                'vehicle_model_id ' => $vehicle_model_id,
+                'year' => $year,
+                'color' => $vehicle_color,
+                'current_status' => $status['status'],
+                'current_status_id' => $status['id'],
+                'current_plate' => $plate['plate_number'],
+                'current_plate_id' => $plate['id']
+            ];
+            $this->vehicle->update($data, ['id'=>$vehicle['id']]);
+            $data['success'] = 'Vehicle updated Successfully';
+            echo json_encode($data);
             exit;
+
         }else{
-            $status_id = $this->vehicleStatusHistory->insertAndGetId([
-                'vehicle_id'=> $vehicle['id'],
-                'status'=> $current_status,
-                'status_reason'=>$status_reason
-            ]);
+            echo json_encode(['error'=>'Could not find Vehicle']);
+            exit;
+
         }
-
-        
-        
-
     }
 }
 ?>

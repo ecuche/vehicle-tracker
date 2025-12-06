@@ -205,7 +205,7 @@ class Router {
         // Admin API
         $this->add('api/admin/update/user', ['controller' => 'AdminController', 'action' => 'updateUser']);
         $this->add('api/admin/delete/user', ['controller' => 'AdminController', 'action' => 'deleteUser']);
-        $this->add('api/admin/update/vehicle', ['controller' => 'AdminController', 'action' => 'updateVehicle']);
+        $this->add('api/admin/update/vehicle', ['controller' => 'ApiController', 'action' => 'updateVehicle']);
         $this->add('api/admin/get-user', ['controller' => 'ApiController', 'action' => 'getUser']);
 
 

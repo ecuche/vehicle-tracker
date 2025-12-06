@@ -186,6 +186,7 @@ class Validator {
 
     public static function validateVIN($vin) {
         // Vehicle Identification Number - 17 alphanumeric characters
+        $vin = strtoupper($vin);
         return preg_match('/^[A-HJ-NPR-Z0-9]{17}$/i', $vin) === 1;
     }
 
