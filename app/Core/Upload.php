@@ -52,7 +52,7 @@ class Upload {
         // Generate unique filename
         $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
         $filename = 'profile_' . uniqid() . '_' . time() . '.' . $extension;
-        $filePath = $this->uploadPath . 'profiles/' . $filename;
+        $filePath = "{$this->uploadPath}profiles/{$filename}";
 
         // Compress and optimize image
         if (!$this->processImage($file['tmp_name'], $filePath)) {
@@ -305,7 +305,7 @@ class Upload {
             return null;
         }
         
-        return '/assets/uploads/' . $filePath;
+        return "/public/assets/uploads/{$filePath}";
     }
 
     public function getFilePath($filePath) {

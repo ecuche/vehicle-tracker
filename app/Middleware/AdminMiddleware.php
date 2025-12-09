@@ -51,7 +51,7 @@ class AdminMiddleware {
 
         // Check if admin account is active and not banned
         $user = $this->auth->getUser();
-        if ($user && $user->is_banned) {
+        if ($user && $user['is_banned']) {
             $this->auth->logout();
             $this->session->setFlash('error', 'Your administrator account has been suspended.');
             header('Location: '.$_ENV['APP_URL'].'/login');
@@ -90,7 +90,7 @@ class AdminMiddleware {
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
         $requestedUrl = $_SERVER['REQUEST_URI'] ?? 'unknown';
 
-        error_log("UNAUTHORIZED ACCESS: User {$user->email} (ID: {$user->id}) attempted to access admin area from IP: {$ipAddress}, URL: {$requestedUrl}");
+        error_log("UNAUTHORIZED ACCESS: User {$user['email']} (ID: {$user['id']}) attempted to access admin area from IP: {$ipAddress}, URL: {$requestedUrl}");
 
         // In a production environment, you might want to log this to a security database
         // or send an alert to administrators
@@ -112,7 +112,7 @@ class AdminMiddleware {
 
         foreach ($sensitiveActions as $action) {
             if (strpos($url, $action) === 0) {
-                error_log("ADMIN ACTION: User {$user->email} accessed {$url} from IP: {$ipAddress}");
+                error_log("ADMIN ACTION: User {$user['email']} accessed {$url} from IP: {$ipAddress}");
                 break;
             }
         }
@@ -175,7 +175,7 @@ class AdminMiddleware {
         $middleware = new self();
         $user = $middleware->auth->getUser();
         
-        if ($user && $middleware->auth->verifyPassword($password, $user->password)) {
+        if ($user && $middleware->auth->verifyPassword($password, $user['password'])) {
             $middleware->session->set('last_password_confirm', time());
             return true;
         }

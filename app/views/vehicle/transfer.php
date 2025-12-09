@@ -7,9 +7,9 @@ ob_start();
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
-            <li class="breadcrumb-item"><a href="/vehicles">My Vehicles</a></li>
-            <li class="breadcrumb-item"><a href="/vehicles/<?= $vehicle['id']; ?>">Vehicle Details</a></li>
+            <li class="breadcrumb-item"><a href="<?=  url('dashboard') ?>">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="<?= url('vehicles') ?>">My Vehicles</a></li>
+            <li class="breadcrumb-item"><a href="<?= url('vehicles/view').$vehicle['vin'] ?>">Vehicle Details</a></li>
             <li class="breadcrumb-item active" aria-current="page">Transfer Vehicle</li>
         </ol>
     </nav>
@@ -84,7 +84,7 @@ ob_start();
                     </div>
 
                     <!-- Transfer Form -->
-                    <form id="transferForm" method="POST" action="/vehicles/<?= $vehicle['id']; ?>/transfer">
+                    <form id="transferForm" method="POST" action="<?= url('api/vehicle/transfer-ownership/'.$vehicle['vin']) ?>">
                         <div class="row">
                             <div class="col-12">
                                 <h6 class="border-bottom pb-2 mb-3">Recipient Information</h6>
@@ -145,6 +145,46 @@ ob_start();
                             </div>
                         </div>
 
+                         <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="border-bottom pb-2 mb-3">Transfer Ownership</h6>
+                            </div>
+                             <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <strong>New Owner Name</strong>
+                                    </label>
+                                    <input class="form-control bg-dark" id="new_owner_name" name="new_owner_name" placeholder="Full Name" readonly>
+                                    <input type="hidden" name="vin" value="<?= $vehicle['vin'] ?>" readonly>
+                                    <input type="hidden" name="vehicle_id" value="<?= $vehicle['id'] ?>" readonly>
+                                </div>
+                            </div>
+                             <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <strong>New Owner NIN</strong>
+                                    </label>
+                                    <input class="form-control bg-dark" id="new_owner_nin" name="new_owner_nin" placeholder="NIN" readonly>
+                                </div>
+                            </div>
+                             <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <strong>New Owner Phone Number</strong>
+                                    </label>
+                                    <input class="form-control bg-dark" id="new_owner_phone" name="new_owner_phone" placeholder="New Owner Phone" readonly>
+                                </div>
+                            </div>
+                             <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <strong>New Owner Email</strong>
+                                    </label>
+                                    <input class="form-control bg-dark" id="new_owner_email" name="new_owner_email" placeholder="Email" readonly>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Transfer Details -->
                         <div class="row mb-4">
                             <div class="col-12">
@@ -155,7 +195,7 @@ ob_start();
                                         <strong>Transfer Type</strong>
                                     </label>
                                     <select class="form-select" id="transfer_type" name="transfer_type" required>
-                                        <option value="">Select transfer type</option>
+                                        <option value="" selected disabled>Select transfer type</option>
                                         <option value="sale">Sale</option>
                                         <option value="gift">Gift</option>
                                         <option value="inheritance">Inheritance</option>
@@ -170,8 +210,7 @@ ob_start();
                                     <div class="input-group">
                                         <span class="input-group-text">₦</span>
                                         <input type="number" class="form-control" id="transfer_amount" 
-                                               name="transfer_amount" min="0" step="0.01"
-                                               placeholder="0.00">
+                                               name="transfer_amount" placeholder="0">
                                     </div>
                                     <div class="form-text">
                                         Enter the amount if this is a sale. Leave empty for gifts or other transfers.
@@ -179,10 +218,10 @@ ob_start();
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="transfer_notes" class="form-label">
+                                    <label for="transfer_note" class="form-label">
                                         <strong>Transfer Notes</strong>
                                     </label>
-                                    <textarea class="form-control" id="transfer_notes" name="transfer_notes" 
+                                    <textarea class="form-control" id="transfer_note" name="transfer_note" 
                                               rows="4" placeholder="Add any additional notes about this transfer..."></textarea>
                                     <div class="form-text">
                                         Optional: Add any relevant information about this transfer.
@@ -512,11 +551,11 @@ function initializeTransferForm() {
         const amountField = document.getElementById('transfer_amount');
         if (this.value === 'sale') {
             amountField.required = true;
-            amountField.parentElement.style.display = 'block';
+            amountField.parentElement.style.display = '';
         } else {
             amountField.required = false;
             amountField.value = '';
-            amountField.parentElement.style.display = 'block';
+            amountField.parentElement.style.display = 'none';
         }
         validateForm();
     });
@@ -548,8 +587,12 @@ function searchRecipient() {
     document.getElementById('recipient_id').value = '';
     validateForm();
 
-    if (identifier.length < 3) {
+    if (!App.validateEmail(identifier) && !App.validateNIN(identifier) && !App.validatePhone(identifier)) {
         searchResults.classList.add('d-none');
+        $('#new_owner_name').val("Full Name");
+        $('#new_owner_email').val("Email");
+        $('#new_owner_nin').val("NIN");
+        $('#new_owner_phone').val("Phone Number");
         return;
     }
 
@@ -562,14 +605,16 @@ function searchRecipient() {
     `;
     searchResults.classList.remove('d-none');
 
-    // Perform search
-    fetch(`/users/search?q=${encodeURIComponent(identifier)}`)
-        .then(response => {
-            if (!response.ok) throw new Error('Search failed');
-            return response.json();
-        })
-        .then(users => {
-            if (users.length === 0) {
+    $.ajax({
+        type: "POST",
+        url: appUrl + "/api/search/user",
+        data: {
+            value:identifier
+        },
+        success: response => {
+            users = JSON.parse(response);
+            
+            if (users.length === 0 || Object.hasOwn(users, 'error')) {
                 resultsContent.innerHTML = `
                     <div class="text-center py-3">
                         <i class="bi bi-search display-6 text-muted"></i>
@@ -593,7 +638,7 @@ function searchRecipient() {
                 
                 resultsHtml += `
                     <div class="list-group-item list-group-item-action" 
-                         onclick="selectRecipient(${user.id}, '${escapeHtml(user.name)}', '${escapeHtml(user.email)}', '${escapeHtml(user.phone || 'N/A')}', '${user.role}')">
+                         onclick="selectRecipient(${user.id}, '${escapeHtml(user.name)}', '${escapeHtml(user.email)}', '${escapeHtml(user.phone || 'N/A')}', '${user.role}', '${user.nin}')">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
                                 <h6 class="mb-1">${user.name}</h6>
@@ -612,9 +657,8 @@ function searchRecipient() {
 
             resultsHtml += '</div>';
             resultsContent.innerHTML = resultsHtml;
-
-        })
-        .catch(error => {
+        },
+        error: error => {
             console.error('Search error:', error);
             resultsContent.innerHTML = `
                 <div class="alert alert-danger">
@@ -622,10 +666,11 @@ function searchRecipient() {
                     Failed to search for users. Please try again.
                 </div>
             `;
-        });
+        }
+    });
 }
 
-function selectRecipient(userId, name, email, phone, role) {
+function selectRecipient(userId, name, email, phone, role, nin) {
     const searchResults = document.getElementById('searchResults');
     const selectedRecipient = document.getElementById('selectedRecipient');
     const recipientDetails = document.getElementById('recipientDetails');
@@ -658,6 +703,11 @@ function selectRecipient(userId, name, email, phone, role) {
             </div>
         </div>
     `;
+
+    $('#new_owner_name').val(name);
+    $('#new_owner_email').val(email);
+    $('#new_owner_nin').val(nin);
+    $('#new_owner_phone').val(phone);
 
     // Set hidden field
     document.getElementById('recipient_id').value = userId;
@@ -754,20 +804,19 @@ function submitTransferForm() {
 
     fetch(form.action, {
         method: 'POST',
-        body: formData
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(Object.fromEntries(formData))
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
             App.showToast('Transfer initiated successfully!', 'success');
-            
             // Close modal
             bootstrap.Modal.getInstance(document.getElementById('confirmationModal')).hide();
-            
             // Redirect to transfers page after delay
             setTimeout(() => {
-                window.location.href = '/vehicles/transfers';
-            }, 2000);
+                window.location.href = appUrl + '/vehicles';
+            }, 1500);
         } else {
             throw new Error(data.error || 'Transfer initiation failed');
         }

@@ -256,7 +256,7 @@ class User extends Model {
             WHERE v.id IN (
                 SELECT vehicle_id FROM vehicles WHERE user_id = ? AND deleted_at IS NULL
                 UNION
-                SELECT vehicle_id FROM ownership_transfers WHERE from_user_id = ? AND status = 'accepted' AND deleted_at IS NULL
+                SELECT vehicle_id FROM ownership_transfers WHERE seller_id = ? AND status = 'accepted' AND deleted_at IS NULL
             )
             AND v.deleted_at IS NULL
             ORDER BY v.created_at DESC
@@ -279,7 +279,7 @@ class User extends Model {
 
     public function deleteUser($user_id) {
         $stmt = $this->db->prepare("
-            DELETE FROM  users WHERE id = ? 
+            DELETE FROM users WHERE id = ? 
         ");
         return $stmt->execute([$user_id]);
     }

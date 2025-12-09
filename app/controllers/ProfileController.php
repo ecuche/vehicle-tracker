@@ -64,10 +64,10 @@ class ProfileController extends Controller {
         $user_id = $this->auth->getUserId();
         $user = $this->user->findById($user_id);
         
-        if ($user && $user->profile_picture) {
+        if ($user && $user['profile_picture']) {
             // Delete physical file
-            if (file_exists($user->profile_picture)) {
-                unlink($user->profile_picture);
+            if (file_exists($_ENV['UPLOAD_PATH'].$user['profile_picture'])) {
+                unlink($_ENV['UPLOAD_PATH'].$user['profile_picture']);
             }
             
             // Update database
@@ -77,9 +77,7 @@ class ProfileController extends Controller {
                 $this->session->setFlash('error', 'Failed to remove profile picture');
             }
         }
-        
-        header("Location: {$_ENV['APP_URL']}/profile");
-        exit;
+        $this->redirect('profile');
     }
 
     public function changePassword() {
@@ -90,47 +88,36 @@ class ProfileController extends Controller {
             $new_password = $_POST['new_password'] ?? '';
             $confirm_password = $_POST['confirm_password'] ?? '';
             
-            $errors = $this->validatePasswordChange($user_id, $current_password, $new_password, $confirm_password);
+            $this->validatePasswordChange($user_id, $current_password, $new_password, $confirm_password);
             
-            if (empty($errors)) {
+            if (!$this->session->checkError()) {
                 if ($this->user->updatePassword($user_id, $new_password)) {
                     $this->session->setFlash('success', 'Password changed successfully');
                 } else {
                     $errors[] = 'Failed to change password';
                 }
             }
-            
-            if (!empty($errors)) {
-                $this->session->setFlash('errors', $errors);
-            }
         }
-        
-        header('Location: /profile');
+        $this->redirect('profile');
         exit;
     }
 
     private function validatePasswordChange($user_id, $current_password, $new_password, $confirm_password) {
-        $errors = [];
         
         $user = $this->user->findById($user_id);
+        $this->session->clearErrors();
         
-        if (!password_verify($current_password, $user->password)) {
-            $errors[] = 'Current password is incorrect';
+        if (!password_verify($current_password, $user['password'])) {
+            $this->session->setError('current_password', 'Current password is incorrect'); 
         }
         
         if (!$this->validator::validatePasswordStrength($new_password)) {
-            $errors[] = 'New password must be at least 8 characters with uppercase, lowercase, number and special character';
+            $this->session->setError('new_password', 'New password must be at least 8 characters with uppercase, lowercase and number');
         }
         
         if ($new_password !== $confirm_password) {
-            $errors[] = 'New passwords do not match';
+            $this->session->setError('confirm_password', 'New passwords do not match');
         }
-        
-        if ($current_password === $new_password) {
-            $errors[] = 'New password must be different from current password';
-        }
-        
-        return $errors;
     }
 
     public function getUserProfile($identifier) {
@@ -153,16 +140,16 @@ class ProfileController extends Controller {
         
         if ($user) {
             // Get user's vehicles and contact details
-            $vehicles = $this->user->getUserVehiclesWithHistory($user->id);
-            $plate_numbers = $this->user->getUserPlateNumbers($user->id);
+            $vehicles = $this->user->getUserVehiclesWithHistory($user['id']);
+            $plate_numbers = $this->user->getUserPlateNumbers($user['id']);
             
             $profile_data = [
                 'user' => [
-                    'email' => $user->email,
-                    'phone' => $user->phone,
-                    'nin' => $user->nin,
-                    'role' => $user->role,
-                    'profile_picture' => $user->profile_picture
+                    'email' => $user['email'],
+                    'phone' => $user['phone'],
+                    'nin' => $user['nin'],
+                    'role' => $user['role'],
+                    'profile_picture' => $user['profile_picture']
                 ],
                 'vehicles' => $vehicles,
                 'plate_numbers' => $plate_numbers

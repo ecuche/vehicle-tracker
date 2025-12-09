@@ -1,24 +1,24 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="<?= current_theme(); ?>" appUrl="<?= $_ENV['APP_URL'] ?>">
+<html lang="en" data-theme="<?= current_theme(); ?>" appUrl="<?= url() ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= isset($title) ? $title . ' - Vehicle Tracker' : 'Vehicle Tracker'; ?></title>
+    <title><?= isset($title) ? $title . ' - '.$_ENV['APP_NAME'] : $_ENV['APP_NAME']; ?></title>
     
      <!-- Bootstrap 5 CSS -->
     <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"> -->
-    <link rel="stylesheet" href="<?= $_ENV['APP_URL'] ?>/public/assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<?=  url('public/assets/css/bootstrap.min.css')?>">
 
     <!-- Bootstrap Icons -->
     <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css"> -->
-    <link rel="stylesheet" href="<?= $_ENV['APP_URL'] ?>/public/assets/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="<?=  url('public/assets/bootstrap-icons/bootstrap-icons.css')?>">
 
 
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="<?= $_ENV['APP_URL'] ?>/public/assets/css/style.css">
-    <link rel="stylesheet" href="<?= $_ENV['APP_URL'] ?>/public/assets/css/dark-mode.css">
-    <link rel="stylesheet" href="<?= $_ENV['APP_URL'] ?>/public/assets/css/light-mode.css">
+    <link rel="stylesheet" href="<?=  url('public/assets/css/style.css')?>">
+    <link rel="stylesheet" href="<?=  url('public/assets/css/dark-mode.css')?>">
+    <link rel="stylesheet" href="<?=  url('public/assets/css/light-mode.css')?>">
 
     <?php if (isset($styles)): ?>
     <?= $styles; ?>
@@ -28,7 +28,7 @@
     <meta name="csrf-token" content="<?= csrf_token(); ?>">
     
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="<?= $_ENV['APP_URL'] ?>/public/assets/images/favicon.ico">
+    <link rel="icon" type="image/x-icon" href="<?=  url('public/assets/images/favicon.ico')?>">
     
     <?php if (isset($meta_description)): ?>
     <meta name="description" content="<?= e($meta_description); ?>">
@@ -46,7 +46,7 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="<?= $_ENV['APP_URL'] ?>/dashboard">
+            <a class="navbar-brand" href="<?=  url('dashboard')?>">
                 <i class="bi bi-car-front-fill"></i>
                 Vehicle Tracker
             </a>
@@ -59,20 +59,20 @@
                 <?php if ($this->auth->isLoggedIn()): ?>
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/dashboard') !== false ? 'active' : ''; ?>" href="<?= $_ENV['APP_URL'] ?>/dashboard">
+                        <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/dashboard') !== false ? 'active' : ''; ?>" href="<?=  url('dashboard')?>">
                             <i class="bi bi-speedometer2"></i> Dashboard
                         </a>
                     </li>
                     <?php if ($this->auth->isDriver() || $this->auth->isSearcher()): ?>
                     <li class="nav-item">
-                        <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/vehicles') !== false ? 'active' : ''; ?>" href="<?= $_ENV['APP_URL'] ?>/vehicles">
+                        <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/vehicles') !== false ? 'active' : ''; ?>" href="<?=  url('vehicles')?>">
                             <i class="bi bi-truck"></i> My Vehicles
                         </a>
                     </li>
                     <?php endif; ?>
                     <?php if ($this->auth->isSearcher() || $this->auth->isAdmin()): ?>
                     <li class="nav-item">
-                        <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/search') !== false ? 'active' : ''; ?>" href="<?= $_ENV['APP_URL'] ?>/search">
+                        <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/search') !== false ? 'active' : ''; ?>" href="<?=  url('search')?>">
                             <i class="bi bi-search"></i> Search
                         </a>
                     </li>
@@ -83,9 +83,9 @@
                             <i class="bi bi-shield-check"></i> Admin
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="<?= $_ENV['APP_URL'] ?>/admin/users">Users</a></li>
-                            <li><a class="dropdown-item" href="<?= $_ENV['APP_URL'] ?>/admin/vehicles">Vehicles</a></li>
-                            <li><a class="dropdown-item" href="<?= $_ENV['APP_URL'] ?>/admin/audit">Audit Trail</a></li>
+                            <li><a class="dropdown-item" href="<?=  url('admin/users')?>">Users</a></li>
+                            <li><a class="dropdown-item" href="<?=  url('admin/vehicles')?>">Vehicles</a></li>
+                            <li><a class="dropdown-item" href="<?=  url('admin/audit')?>">Audit Trail</a></li>
                         </ul>
                     </li>
                     <?php endif; ?>
@@ -100,7 +100,7 @@
                             <?= e($this->auth->getUserEmail()); ?>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="<?= $_ENV['APP_URL'] ?>/profile">
+                            <li><a class="dropdown-item" href="<?=  url('profile')?>">
                                 <i class="bi bi-person"></i> Profile
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
@@ -112,19 +112,19 @@
                                 </button>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger" href="<?= $_ENV['APP_URL'] ?>/logout">
+                            <li><a class="dropdown-item text-danger" href="<?=  url('logout')?>">
                                 <i class="bi bi-box-arrow-right"></i> Logout
                             </a></li>
                         </ul>
                     </li>
                     <?php else: ?>
                     <li class="nav-item">
-                        <a class="nav-link" href="<?= $_ENV['APP_URL'] ?>/login">
+                        <a class="nav-link" href="<?=  url('login')?>">
                             <i class="bi bi-box-arrow-in-right"></i> Login
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="<?= $_ENV['APP_URL'] ?>/register">
+                        <a class="nav-link" href="<?=  url('register')?>">
                             <i class="bi bi-person-plus"></i> Register
                         </a>
                     </li>
@@ -143,14 +143,14 @@
                 <div class="sidebar-sticky pt-3">
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link <?= $_SERVER['REQUEST_URI'] === '/dashboard' ? 'active' : ''; ?>" href="<?= $_ENV['APP_URL'] ?>/dashboard">
+                            <a class="nav-link <?= $_SERVER['REQUEST_URI'] === '/dashboard' ? 'active' : ''; ?>" href="<?=  url('dashboard')?>">
                                 <i class="bi bi-speedometer2"></i> Dashboard
                             </a>
                         </li>
                         
                         <?php if ($this->auth->isDriver() || $this->auth->isSearcher()): ?>
                         <li class="nav-item">
-                            <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/vehicles') !== false ? 'active' : ''; ?>" href="<?= $_ENV['APP_URL'] ?>/vehicles">
+                            <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/vehicles') !== false ? 'active' : ''; ?>" href="<?=  url('vehicles')?>">
                                 <i class="bi bi-truck"></i> My Vehicles
                             </a>
                         </li>
@@ -158,7 +158,7 @@
                         
                         <?php if ($this->auth->isSearcher() || $this->auth->isAdmin()): ?>
                         <li class="nav-item">
-                            <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/search') !== false ? 'active' : ''; ?>" href="<?= $_ENV['APP_URL'] ?>/search">
+                            <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/search') !== false ? 'active' : ''; ?>" href="<?=  url('search')?>">
                                 <i class="bi bi-search"></i> Vehicle Search
                             </a>
                         </li>
@@ -171,24 +171,24 @@
                             </h6>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/admin/users') !== false ? 'active' : ''; ?>" href="<?= $_ENV['APP_URL'] ?>/admin/users">
+                            <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/admin/users') !== false ? 'active' : ''; ?>" href="<?=  url('admin/users')?>">
                                 <i class="bi bi-people"></i> User Management
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/admin/vehicles') !== false ? 'active' : ''; ?>" href="<?= $_ENV['APP_URL'] ?>/admin/vehicles">
+                            <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/admin/vehicles') !== false ? 'active' : ''; ?>" href="<?=  url('admin/vehicles')?>">
                                 <i class="bi bi-truck-flatbed"></i> Vehicle Management
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/admin/audit') !== false ? 'active' : ''; ?>" href="<?= $_ENV['APP_URL'] ?>/admin/audit">
+                            <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/admin/audit') !== false ? 'active' : ''; ?>" href="<?=  url('admin/audit')?>">
                                 <i class="bi bi-clipboard-data"></i> Audit Trail
                             </a>
                         </li>
                         <?php endif; ?>
                         
                         <li class="nav-item">
-                            <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/profile') !== false ? 'active' : ''; ?>" href="<?= $_ENV['APP_URL'] ?>/profile">
+                            <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/profile') !== false ? 'active' : ''; ?>" href="<?=  url('profile')?>">
                                 <i class="bi bi-person"></i> My Profile
                             </a>
                         </li>
@@ -245,19 +245,18 @@
 
      <!-- JQuery JS -->
     <!-- <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script> -->
-    <script src="<?= $_ENV['APP_URL'] ?>/public/assets/js/jquery.min.js"></script>
+    <script src="<?=  url('public/assets/js/jquery.min.js')?>"></script>
 
 
     <!-- Bootstrap JS -->
     <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script> -->
-    <script src="<?= $_ENV['APP_URL'] ?>/public/assets/js/bootstrap.bundle.min.js"></script>
-</script>
+    <script src="<?=  url('public/assets/js/bootstrap.bundle.min.js')?>"></script>
 
     <!-- Custom JS -->
-    <script src="<?= $_ENV['APP_URL'] ?>/public/assets/js/theme.js"></script>
-    <!-- <script src="<?= $_ENV['APP_URL'] ?>/public/assets/js/validation.js"></script> -->
-    <script src="<?= $_ENV['APP_URL'] ?>/public/assets/js/ajax.js"></script>
-    <script src="<?= $_ENV['APP_URL'] ?>/public/assets/js/app.js"></script>
+    <script src="<?=  url('public/assets/js/theme.js')?>"></script>
+    <script src="<?=  url('public/assets/js/validation.js')?>"></script>
+    <script src="<?=  url('public/assets/js/ajax.js')?>"></script>
+    <script src="<?=  url('public/assets/js/app.js')?>"></script>
     
     <!-- Page-specific JS -->
     <?php if (isset($scripts)): ?>

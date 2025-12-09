@@ -45,6 +45,13 @@ class Session {
         $_SESSION[$key] = $value;
     }
 
+    public function check($key){
+        if (isset($_SESSION[$key])) {
+            return true;
+        }
+        return false;
+    }
+
     public function get($key, $default = null) {
         return $_SESSION[$key] ?? $default;
     }
@@ -90,6 +97,13 @@ class Session {
         $_SESSION['flash'][$key] = $value;
     }
 
+    public function checkFlash(){
+        if (isset($_SESSION['flash'])) {
+            return true;
+        }
+        return false;
+    }
+
     public function getFlash($key) {
         if (isset($_SESSION['flash'][$key])) {
             $value = $_SESSION['flash'][$key];
@@ -101,6 +115,14 @@ class Session {
 
     public function hasFlash($key) {
         return isset($_SESSION['flash'][$key]);
+    }
+
+    public function removeFlash($key) {
+        unset($_SESSION['flash'][$key]);
+    }
+
+    public function clearFlash() {
+        unset($_SESSION['flash']);
     }
 
     public function keepFlash($key) {
@@ -126,8 +148,28 @@ class Session {
         $_SESSION['errors'][$key] = $message;
     }
 
-    public function     getError($key) {
+    public function checkError(){
+        if (isset($_SESSION['errors'])) {
+            return true;
+        }
+        return false;
+    }
+
+    public function getError($key) {
         return $_SESSION['errors'][$key] ?? null;
+    }
+
+    public function flashError($key) {
+        if(isset($_SESSION['errors'][$key])) {
+            $value = $_SESSION['errors'][$key];
+            unset($_SESSION['errors'][$key]);
+            return $value;
+        }
+        return null;
+    }
+
+    public function removeError($key) {
+        unset($_SESSION['errors'][$key]);
     }
 
     public function hasError($key) {
@@ -156,12 +198,28 @@ class Session {
          $_SESSION['form_data'][$key] = $message;
     }
 
+    public function checkFormData(){
+        if (isset($_SESSION['form_data'])) {
+            return true;
+        }
+        return false;
+    } 
+
     public function getFormData($key){
         return $_SESSION['form_data'][$key] ?? null;
     }
 
     public function hasFormData($key) {
         return isset($_SESSION['form_data'][$key]);
+    }
+
+    public function flashFormData($key) {
+        if(isset($_SESSION['form_data'][$key])) {
+            $value = $_SESSION['form_data'][$key];
+            unset($_SESSION['form_data'][$key]);
+            return $value;
+        }
+        return null;
     }
 
     public function clearFormData() {

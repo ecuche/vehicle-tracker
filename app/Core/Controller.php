@@ -17,6 +17,7 @@ use App\Core\Auth;
 use App\Core\CSRF;
 use App\core\Upload;
 use App\Core\Validator;
+use App\Core\Request;
 
 
 abstract class Controller{
@@ -38,6 +39,7 @@ abstract class Controller{
     protected $auth;
     protected $validator;
     protected $csrf;
+    protected $request;
 
     public function __construct() {
         //models
@@ -55,6 +57,7 @@ abstract class Controller{
         $this->validator = new Validator();
         $this->session = new Session();
         $this->csrf = new CSRF();
+        $this->request = new Request();
     }
 
     protected function view(string $template, array $data = []): void
@@ -63,9 +66,10 @@ abstract class Controller{
         require_once __DIR__ . "/../views/{$template}.php";
     }
 
-    protected function redirect(string $url): void
+    protected function redirect(string $url, array $data = []): void  
     {
-        header("Location: {$_ENV['APP_URL']}/{$url}");
+        $params = empty($data) ? '' : '/?' .http_build_query($data);
+        header("Location: {$_ENV['APP_URL']}/{$url}".$params);
         exit;
     }
 

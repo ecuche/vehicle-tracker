@@ -46,7 +46,7 @@ function current_url() {
  * Redirect to a specific URL
  */
 function redirect($url, $statusCode = 302) {
-    header('Location: ' . $url, true, $statusCode);
+    header('Location: ' . $_ENV['APP_URL']."/".$url, true, $statusCode);
     exit;
 }
 
@@ -76,6 +76,12 @@ function get_error($field) {
     $errors = $session->getError($field) ?? [];
     return $errors ?? '';
 }
+
+function flash_error($field) {
+    $session = new Session();
+    $error = $session->flashError($field);
+    return $error;
+}                     
 
 /**
  * Display CSRF token field
@@ -147,11 +153,22 @@ function format_filesize($bytes) {
  */
 function file_url($filePath) {
     if (empty($filePath)) {
-        return $_ENV['APP_URL'].'/public/assets/images/default-avatar.png'; // Default avatar
+        return url().'/public/assets/images/default-avatar.png'; // Default avatar
     }
-    
     $upload = new Upload();
-    return $upload->getFileUrl($filePath);
+    return url().$upload->getFileUrl($filePath);
+}
+
+function upload_path($filePath = '') {
+    return $_ENV['APP_URL'].'/'.$_ENV['UPLOAD_PATH'].$filePath;
+}
+
+
+function primary_image($url) {
+     if (!empty($url) && file_exists($_ENV['UPLOAD_PATH'].$url)) {
+        return url("/public/assets/ulpoads/{$url}"); // Default avatar
+    }
+    return url('/public/assets/images/primary-image.png');
 }
 
 /**
@@ -218,11 +235,9 @@ function user_avatar($user = null) {
         $auth = new Auth();
         $user = $auth->getUser();
     }
-    
     if ($user && $user['profile_picture']) {
         return file_url($user['profile_picture']);
     }
-    
     return url('/public/assets/images/default-avatar.png');
 }
 
@@ -256,6 +271,14 @@ function is_driver() {
 function is_searcher() {
     $auth = new Auth();
     return $auth->isSearcher();
+}
+
+function get_user_id($user = null) {
+    if ($user) {
+        return $user['user_id'];
+    }
+    $auth = new Auth();
+    return $auth->getUserId();
 }
 
 /**
@@ -512,7 +535,7 @@ function formatFileSize($bytes) {
 function buildPageUrl($page) {
     $params = $_GET;
     $params['page'] = $page;
-    return '/admin/users/' . ($GLOBALS['user']['id'] ?? '') . '/vehicles?' . http_build_query($params);
+    return $_ENV['APP_URL'].'/admin/users/' . ($GLOBALS['user']['id'] ?? '') . '/vehicles?' . http_build_query($params);
 }
 
 // Helper function to build previous owners pagination URLs
@@ -577,5 +600,18 @@ function buildPageUrlAudit($page) {
     $params = $_GET;
     $params['page'] = $page;
     return '/admin/users/' . ($GLOBALS['user']['id'] ?? '') . '/audit?' . http_build_query($params);
+}
+
+// Helper function for activity colors
+function getActivityColor($action) {
+    $colors = [
+        'register' => 'primary',
+        'update' => 'info',
+        'transfer' => 'warning',
+        'status_change' => 'danger',
+        'plate_assignment' => 'success',
+        'document_upload' => 'secondary'
+    ];
+    return $colors[$action] ?? 'secondary';
 }
 ?>

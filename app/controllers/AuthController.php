@@ -18,7 +18,7 @@ class AuthController extends Controller{
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = [
-                'name' => trim($_POST['name'] ?? ''),
+                'name' => ucwords(trim($_POST['name'] ?? '')),
                 'email' => trim($_POST['email'] ?? ''),
                 'phone' => preg_replace('/\D/', '', trim($_POST['phone'])),
                 'nin' => trim($_POST['nin'] ?? ''),
@@ -109,14 +109,11 @@ class AuthController extends Controller{
                 $this->session->setFlash('error', 'Too many login attempts. Please try again in 15 minutes.');
                 header("Location: {$_ENV['APP_URL']}/login");
                 exit;
-            }
-            
-            $user = $this->user->findByEmail($email);
-            $user = (object)$user;
-            
-            if ($user && password_verify($password, $user->password)) {
-                if ($user->email_verified) {
-                    if ($user->is_banned) {
+            }            
+            $user = $this->user->findByEmail($email);            
+            if ($user && password_verify($password, $user['password'])) {
+                if ($user['email_verified']) {
+                    if ($user['is_banned']) {
                         $this->session->setFlash('error', 'Your account has been banned. Please contact administrator.');
                         header("Location: {$_ENV['APP_URL']}/login");
                         exit;
@@ -154,9 +151,7 @@ class AuthController extends Controller{
         } else {
             $this->session->setFlash('error', 'Invalid or expired verification token.');
         }
-        
-        header("Location: {$_ENV['APP_URL']}/login");
-        exit;
+        $this->redirect('login');
     }
 
     public function forgotPassword() {
@@ -168,7 +163,7 @@ class AuthController extends Controller{
                 $reset_token = bin2hex(random_bytes(32));
                 $expires_at = date('Y-m-d H:i:s', strtotime('+1 hour'));
                 
-                if ($this->user->createPasswordReset($user->id, $reset_token, $expires_at)) {
+                if ($this->user->createPasswordReset($user['id'], $reset_token, $expires_at)) {
                     sendPasswordResetEmail($email, $reset_token);
                 }
             }

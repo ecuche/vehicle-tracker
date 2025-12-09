@@ -133,7 +133,7 @@ class Vehicle extends Model {
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute($current_only ? [$user_id, $user_id] : [$user_id]);
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getUserVehiclesPaginated($user_id, $page = 1, $per_page = 10) {
@@ -248,8 +248,8 @@ class Vehicle extends Model {
                 u_from.phone as from_user_phone,
                 u_to.phone as to_user_phone
             FROM ownership_transfers ot
-            LEFT JOIN users u_from ON ot.from_user_id = u_from.id
-            LEFT JOIN users u_to ON ot.to_user_id = u_to.id
+            LEFT JOIN users u_from ON ot.seller_id = u_from.id
+            LEFT JOIN users u_to ON ot.buyer_id = u_to.id
             WHERE ot.vehicle_id = ? AND ot.deleted_at IS NULL
             ORDER BY ot.created_at DESC
         ");
@@ -641,13 +641,9 @@ class Vehicle extends Model {
         $stmt = $this->db->prepare("
             SELECT 
                 ot.*,
-                u_from.email as from_user_email,
-                u_to.email as to_user_email,
-                u_from.phone as from_user_phone,
-                u_to.phone as to_user_phone
+                u.* 
             FROM ownership_transfers ot
-            LEFT JOIN users u_from ON ot.from_user_id = u_from.id
-            LEFT JOIN users u_to ON ot.to_user_id = u_to.id
+            JOIN users u ON ot.buyer_id = u.id
             WHERE ot.vehicle_id = ? AND ot.deleted_at IS NULL
             ORDER BY ot.created_at DESC
         ");
@@ -664,8 +660,8 @@ class Vehicle extends Model {
                 u_from.phone as from_user_phone,
                 u_to.phone as to_user_phone
             FROM ownership_transfers ot
-            LEFT JOIN users u_from ON ot.from_user_id = u_from.id
-            LEFT JOIN users u_to ON ot.to_user_id = u_to.id
+            LEFT JOIN users u_from ON ot.seller_id = u_from.id
+            LEFT JOIN users u_to ON ot.buyer_id = u_to.id
             WHERE ot.vehicle_id = ? AND ot.deleted_at IS NULL
             ORDER BY ot.created_at DESC
         ");
@@ -685,9 +681,13 @@ class Vehicle extends Model {
 
     public function getDocumentHistory($vehicle_id) {
         $stmt = $this->db->prepare("
-            SELECT * FROM vehicle_documents 
-            WHERE vehicle_id = ? AND deleted_at IS NULL 
-            ORDER BY created_at DESC
+            SELECT
+            vd.*,
+            u.*
+            FROM vehicle_documents vd
+            JOIN users u ON vd.uploader_id = u.id
+            WHERE vd.vehicle_id = ? AND vd.deleted_at IS NULL 
+            ORDER BY vd.created_at DESC
         ");
         $stmt->execute([$vehicle_id]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -703,7 +703,7 @@ class Vehicle extends Model {
                 from_user.updated_at  AS user_updated_at,
                 from_user.deleted_at  AS user_deleted_at
             FROM ownership_transfers ot
-            LEFT JOIN users from_user ON ot.from_user_id = from_user.id
+            LEFT JOIN users from_user ON ot.seller_id = from_user.id
             WHERE ot.vehicle_id = ? AND ot.deleted_at IS NULL
             ORDER BY ot.created_at DESC;
         ");
@@ -734,7 +734,7 @@ class Vehicle extends Model {
                 u.updated_at  AS user_updated_at,
                 u.deleted_at  AS user_deleted_at
             FROM ownership_transfers ot
-            JOIN users u ON ot.from_user_id = u.id
+            JOIN users u ON ot.seller_id = u.id
             WHERE ot.vehicle_id = ? AND ot.deleted_at IS NULL
             ORDER BY ot.created_at DESC;
         ");
@@ -768,7 +768,7 @@ class Vehicle extends Model {
                 u.updated_at  AS user_updated_at,
                 u.deleted_at  AS user_deleted_at
                  FROM ownership_transfers ot
-            JOIN users u ON ot.from_user_id = u.id
+            JOIN users u ON ot.seller_id = u.id
             WHERE ot.vehicle_id = ? AND ot.deleted_at IS NULL
             ORDER BY ot.created_at DESC LIMIT ? OFFSET ?
         ");

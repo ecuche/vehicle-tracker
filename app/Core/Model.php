@@ -65,6 +65,34 @@ abstract class Model {
         return false;
     }
 
+    public function findFirst($where, $table = null) {
+        $table ??= $this->getTable();
+        if (empty($where)) {
+            $stmt = $this->db->prepare("SELECT * FROM $table WHERE deleted_at IS NULL LIMIT 1");
+            $stmt->execute();
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        }
+
+        $whereClause = implode(" AND ", array_map(fn($col) => "$col = ?", array_keys($where)));
+        $stmt = $this->db->prepare("SELECT * FROM $table WHERE $whereClause AND deleted_at IS NULL LIMIT 1");
+        $stmt->execute(array_values($where));
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function hardFindFirst($where, $table = null) { 
+        $table ??= $this->getTable();
+        if (empty($where)) {
+            $stmt = $this->db->prepare("SELECT * FROM $table LIMIT 1");
+            $stmt->execute();
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        }
+
+        $whereClause = implode(" AND ", array_map(fn($col) => "$col = ?", array_keys($where)));
+        $stmt = $this->db->prepare("SELECT * FROM $table WHERE $whereClause LIMIT 1");
+        $stmt->execute(array_values($where));
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
     public function check($where, $table){
         $table ??= $this->getTable();
         $whereClause = implode(" AND ", array_map(fn($col) => "$col = ?", array_keys($where)));
@@ -128,6 +156,20 @@ abstract class Model {
         $setClause = implode(", ", array_map(fn($col) => "$col = ?", array_keys($data)));
         $stmt = $this->db->prepare("UPDATE $table SET $setClause WHERE id = ? AND deleted_at IS NULL");
         return $stmt->execute(array_merge(array_values($data), [$id]));
+    }
+
+    public function updateFirst($data, $table = null) {
+        $table ??= $this->getTable();
+        $setClause = implode(", ", array_map(fn($col) => "$col = ?", array_keys($data)));
+        $stmt = $this->db->prepare("UPDATE $table SET $setClause WHERE deleted_at IS NULL ORDER BY id ASC LIMIT 1");
+        return $stmt->execute(array_values($data));
+    }
+
+    public function updateLast($data, $table = null) {
+        $table ??= $this->getTable();
+        $setClause = implode(", ", array_map(fn($col) => "$col = ?", array_keys($data)));
+        $stmt = $this->db->prepare("UPDATE $table SET $setClause WHERE deleted_at IS NULL ORDER BY id DESC LIMIT 1");
+        return $stmt->execute(array_values($data));
     }
 
     public function deleteById($id, $table = null) {
@@ -249,7 +291,7 @@ abstract class Model {
         return $stmt->execute($params);
     }
 
-    public function findById($id, $table = null) {
+    public function findById(int $id, $table = null) {
         $table ??= $this->getTable();
         $stmt = $this->db->prepare("SELECT * FROM $table WHERE id = ? AND deleted_at IS NULL");
         $stmt->execute([$id]);
@@ -513,7 +555,7 @@ abstract class Model {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function findFirst($table = null) {
+    public function findFirstRow($table = null) {
         $table ??= $this->getTable();
         $stmt = $this->db->prepare("SELECT * FROM $table LIMIT 1");
         $stmt->execute();
@@ -571,7 +613,7 @@ abstract class Model {
         return $result['count'] ?? 0;   
     }
 
-    public function exists($where, $table = null) {
+    public function exists(array $where, $table = null) {
         $table ??= $this->getTable();
         $whereClause = implode(" AND ", array_map(fn($col) => "$col = ?", array_keys($where)));
         $stmt = $this->db->prepare("SELECT 1 FROM $table WHERE $whereClause AND deleted_at IS NULL LIMIT 1 ");

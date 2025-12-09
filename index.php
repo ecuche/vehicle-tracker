@@ -273,3 +273,4 @@ if (!empty($_ENV['APP_DEBUG']) && $_ENV['APP_DEBUG'] === 'true') {
     $ms = round((microtime(true) - APP_START) * 1000, 2);
     error_log("Request took {$ms}ms");
 }
+

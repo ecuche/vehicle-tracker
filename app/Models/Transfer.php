@@ -2,7 +2,7 @@
 namespace App\Models;
 
 use App\Core\Model;
-use App\Core\Database;
+use PDO;
 
 class Transfer extends Model{
 
@@ -10,13 +10,13 @@ class Transfer extends Model{
 
     public function create($data) {
         $stmt = $this->db->prepare("
-            INSERT INTO ownership_transfers (vehicle_id, from_user_id, to_user_id, status, created_at) 
+            INSERT INTO ownership_transfers (vehicle_id, seller_id, buyer_id, status, created_at) 
             VALUES (?, ?, ?, ?, NOW())
         ");
         return $stmt->execute([
             $data['vehicle_id'],
-            $data['from_user_id'],
-            $data['to_user_id'],
+            $data['seller_id'],
+            $data['buyer_id'],
             $data['status']
         ]);
     }
@@ -26,8 +26,8 @@ class Transfer extends Model{
             SELECT ot.*, v.vin, v.current_status, u_from.email as from_email, u_to.email as to_email
             FROM ownership_transfers ot
             LEFT JOIN vehicles v ON ot.vehicle_id = v.id
-            LEFT JOIN users u_from ON ot.from_user_id = u_from.id
-            LEFT JOIN users u_to ON ot.to_user_id = u_to.id
+            LEFT JOIN users u_from ON ot.seller_id = u_from.id
+            LEFT JOIN users u_to ON ot.buyer_id = u_to.id
             WHERE ot.id = ? AND ot.deleted_at IS NULL
         ");
         $stmt->execute([$id]);
@@ -49,13 +49,13 @@ class Transfer extends Model{
             LEFT JOIN vehicles v ON ot.vehicle_id = v.id
             LEFT JOIN vehicle_models vm ON v.vehicle_model_id = vm.id
             LEFT JOIN plate_numbers pn ON v.id = pn.vehicle_id AND pn.is_current = 1
-            LEFT JOIN users u_from ON ot.from_user_id = u_from.id
-            WHERE ot.to_user_id = ? AND ot.status = 'pending' 
+            LEFT JOIN users u_from ON ot.seller_id = u_from.id
+            WHERE ot.buyer_id = ? AND ot.status = 'pending' 
             AND ot.deleted_at IS NULL
             ORDER BY ot.created_at DESC
         ");
         $stmt->execute([$user_id]);
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getUserTransfers($user_id, $limit = null) {
@@ -72,9 +72,9 @@ class Transfer extends Model{
             LEFT JOIN vehicles v ON ot.vehicle_id = v.id
             LEFT JOIN vehicle_models vm ON v.vehicle_model_id = vm.id
             LEFT JOIN plate_numbers pn ON v.id = pn.vehicle_id AND pn.is_current = 1
-            LEFT JOIN users u_from ON ot.from_user_id = u_from.id
-            LEFT JOIN users u_to ON ot.to_user_id = u_to.id
-            WHERE (ot.from_user_id = ? OR ot.to_user_id = ?) 
+            LEFT JOIN users u_from ON ot.seller_id = u_from.id
+            LEFT JOIN users u_to ON ot.buyer_id = u_to.id
+            WHERE (ot.seller_id = ? OR ot.buyer_id = ?) 
             AND ot.deleted_at IS NULL
             ORDER BY ot.created_at DESC
         ";
@@ -88,7 +88,7 @@ class Transfer extends Model{
             $stmt->execute([$user_id, $user_id]);
         }
         
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function updateStatus($transfer_id, $status) {
@@ -112,7 +112,7 @@ class Transfer extends Model{
         $sql = "SELECT COUNT(*) as count FROM ownership_transfers WHERE status = 'pending' AND deleted_at IS NULL";
         
         if ($user_id) {
-            $sql .= " AND to_user_id = ?";
+            $sql .= " AND buyer_id = ?";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$user_id]);
         } else {
@@ -145,7 +145,7 @@ class Transfer extends Model{
                 JOIN vehicles v ON ot.vehicle_id = v.id
                 WHERE v.user_id = ?
                 AND ot.status = 'pending'
-                AND ot.to_user_id = ?
+                AND ot.buyer_id = ?
                 AND ot.deleted_at IS NULL
                 AND v.deleted_at IS NULL";
 
@@ -161,7 +161,7 @@ class Transfer extends Model{
                 JOIN vehicles AS v 
                 ON ot.vehicle_id = v.id
                 WHERE v.user_id = ?
-                AND ot.from_user_id = ?
+                AND ot.seller_id = ?
                 AND ot.status = 'pending'
                 AND ot.deleted_at IS NULL
                 AND v.deleted_at IS NULL";
@@ -175,7 +175,7 @@ class Transfer extends Model{
         $sql = "SELECT COUNT(*) as count FROM ownership_transfers WHERE status = 'accepted' AND deleted_at IS NULL";
         
         if ($user_id) {
-            $sql .= " AND from_user_id = ?";
+            $sql .= " AND seller_id = ?";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$user_id]);
         } else {
@@ -211,12 +211,29 @@ class Transfer extends Model{
                 u_to.email as to_user_email,
                 u_to.phone as to_user_phone
             FROM ownership_transfers ot
-            LEFT JOIN users u_from ON ot.from_user_id = u_from.id
-            LEFT JOIN users u_to ON ot.to_user_id = u_to.id
+            LEFT JOIN users u_from ON ot.seller_id = u_from.id
+            LEFT JOIN users u_to ON ot.buyer_id = u_to.id
             WHERE ot.vehicle_id = ? AND ot.deleted_at IS NULL
             ORDER BY ot.created_at DESC
         ");
         $stmt->execute([$vehicle_id]);
+        return $stmt->fetchAll();
+    }
+
+    public function getUserVehicleHistoryPagination($user_id, $offset = 0, $limit =10) {
+        $stmt = $this->db->prepare("
+        SELECT
+            ot.*,
+            v.*,
+            vm.*
+            FROM ownership_transfers ot
+            JOIN vehicles v ON ot.vehicle_id = v.id
+            JOIN vehicle_models vm ON v.vehicle_model_id = vm.id
+            WHERE ot.buyer_id = ? AND ot.deleted_at IS NULL 
+            ORDER BY ot.created_at DESC
+            LIMIT ? OFFSET ?
+        ");
+        $stmt->execute([$user_id, $limit, $offset]);
         return $stmt->fetchAll();
     }
 }

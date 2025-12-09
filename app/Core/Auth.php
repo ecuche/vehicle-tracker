@@ -15,10 +15,10 @@ class Auth {
     }
 
     public function login($user) {
-        $this->user->updateLastLogin($user->id);
-        $this->session->set('user_id', $user->id);
-        $this->session->set('user_role', $user->role);
-        $this->session->set('user_email', $user->email);
+        $this->user->updateLastLogin($user['id']);
+        $this->session->set('user_id', $user['id']);
+        $this->session->set('user_role', $user['role']);
+        $this->session->set('user_email', $user['email']);
         $this->session->set('login_time', time());
         $this->session->set('last_activity', time());
         
@@ -274,7 +274,7 @@ class Auth {
 
     // Account locking
     public function isAccountLocked($user) {
-        return $user->is_banned == 1;
+        return $user['is_banned'] == 1;
     }
 
     public function lockAccount($user_id) {

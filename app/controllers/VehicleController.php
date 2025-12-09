@@ -7,7 +7,6 @@ class VehicleController extends Controller {
 
     public function __construct() {
         parent::__construct();
-        
         if (!$this->auth->isLoggedIn()) {
             $this->redirect('login');
             exit;
@@ -21,7 +20,7 @@ class VehicleController extends Controller {
         // Only drivers and searchers can register vehicles
         if (!in_array($user_role, ['driver', 'searcher'])) {
             $this->session->setFlash('error', 'Only drivers and searchers can register vehicles');
-            header('Location: '.$_ENV['APP_URL'].'/dashboard');
+            $this->redirect('dashboard');
             exit;
         }
 
@@ -65,8 +64,13 @@ class VehicleController extends Controller {
                 
                 if (empty($upload_errors)) {
                     if ($this->vehicle->create($data, $vehicle_images, $vehicle_documents)) {
+                        $vehicle = $this->vehicle->find(['vin'=>$data['vin']]);
+                        $status = $this->vehicleStatusHistory->insertAndGet(['vehicle_id' => $vehicle['id']]);
+                        $plate = $this->plateNumber->insertAndGet(['vehicle_id' => $vehicle['id'], 'plate_number' => $data['plate_number']]);
+                        $transfer = $this->transfer->insertAndGet(['vehicle_id'=> $vehicle['id'], 'buyer_id' => $user_id, 'status'=>'registration' ]);
+                        $this->vehicle->updateById(['current_status' => $status['status'], 'current_status_id' => $status['id'], 'current_plate' => $plate['plate_number'], 'current_plate_id' => $plate['id']], $vehicle['id']);
                         $this->session->setFlash('success', 'Vehicle registered successfully');
-                        header('Location: '.$_ENV['APP_URL'].'/vehicles');
+                        $this->redirect('vehicles');
                         exit;
                     } else {
                         $errors[] = 'Vehicle registration failed';
@@ -86,8 +90,7 @@ class VehicleController extends Controller {
             'vehicle_models' => $vehicle_models,
             'vehicle_makes' => $vehicle_makes,
         ];
-        extract($data);        
-        require_once 'app/Views/vehicle/register.php';
+        $this->view('vehicle/register', $data);
     }
 
     private function validateVehicleRegistration($data) {
@@ -122,30 +125,25 @@ class VehicleController extends Controller {
 
     public function index() {
         $user_id = $this->auth->getUserId();
-        $user_role = $this->auth->getUserRole();
         
         $page = $_GET['page'] ?? 1;
         $per_page = $_GET['per_page'] ?? 10;
-        
-        $vehicles = $this->vehicle->getUserVehiclesPaginated($user_id, $page, $per_page);
         $total_vehicles = $this->vehicle->getUserVehicleCount($user_id);
-        $pending_requests = $this->transfer->getOutgoingCount($user_id);
-        $incoming_requests = $this->transfer->getIncomingCount($user_id);
-        $failed_sales = $this->transfer->getFailedCount($user_id);
-        $sold_vehicles = $this->transfer->getSoldCount($user_id);
-
-        
         $data = [
-            'vehicles' => $vehicles,
+            'vehicles' => $this->vehicle->getUserVehiclesPaginated($user_id, $page, $per_page),
             'pagination' => [
                 'page' => $page,
                 'per_page' => $per_page,
                 'total' => $total_vehicles,
                 'total_pages' => ceil($total_vehicles / $per_page)
-            ]
+            ],
+            'pending_requests'=> $this->transfer->getOutgoingCount($user_id),
+            'failed_sales'=> $this->transfer->getFailedCount($user_id),
+            'incoming_requests' => $this->transfer->getIncomingCount($user_id),
+            'total_vehicles' => $total_vehicles,
+            'sold_vehicles' => $this->transfer->getSoldCount($user_id),
         ];
-        extract($data);
-        require_once 'app/Views/vehicle/index.php';
+        $this->view('vehicle/index', $data);
     }
 
     public function transfer() {
@@ -175,8 +173,8 @@ class VehicleController extends Controller {
                 // Create transfer request
                 $transfer_data = [
                     'vehicle_id' => $vehicle_id,
-                    'from_user_id' => $user_id,
-                    'to_user_id' => $recipient->id,
+                    'seller_id' => $user_id,
+                    'buyer_id' => $recipient->id,
                     'status' => 'pending'
                 ];
                 
@@ -185,7 +183,7 @@ class VehicleController extends Controller {
                     sendTransferNotification($recipient->email, $vehicle, $this->auth->getUser());
                     
                     $this->session->setFlash('success', 'Transfer request sent successfully');
-                    header('Location: '.$_ENV['APP_URL'].'/vehicles');
+                    $this->redirect('vehicles');
                     exit;
                 } else {
                     $errors[] = 'Failed to create transfer request';
@@ -193,8 +191,7 @@ class VehicleController extends Controller {
             }
             $this->session->setFlash('errors', $errors);
         }
-        
-        header('Location: '.$_ENV['APP_URL'].'/vehicles');
+        $this->redirect('vehicles');
         exit;
     }
 
@@ -202,49 +199,47 @@ class VehicleController extends Controller {
         $vehicle = $this->vehicle->findByVIN($vin);
         if (!$vehicle) {
             $this->session->setFlash('error', 'Vehicle not found');
-            header('Location: '.$_ENV['APP_URL'].'/dashboard');
+            $this->redirect('dashboard');
             exit;
         }
-
-        $user_id = $this->auth->getUserId();
-        require_once 'app/Views/vehicle/transfer.php';
+        if($vehicle['user_id'] !== $this->auth->getUserId() && !$this->auth->isAdmin()){
+            $this->session->setFlash('error', 'Vehicle not found');
+            $this->redirect('vehicles');
+            exit;
+        }
+        $data = [
+            'user_id' => $this->auth->getUserId(),
+            'vehicle' => $vehicle
+        ];
+        $this->view('vehicle/transfer', $data);
     }
 
-    public function handleTransfer() {
-        $user_id = $this->auth->getUserId();
-        
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $transfer_id = $_POST['transfer_id'] ?? '';
-            $action = $_POST['action'] ?? ''; // accept or reject
-            
-            $transfer = $this->transfer->findTransferById($transfer_id);
-            
-            if (!$transfer || $transfer->to_user_id != $user_id) {
-                $this->session->setFlash('error', 'Transfer request not found');
-                header('Location: '.$_ENV['APP_URL'].'/dashboard');
-                exit;
-            }
-            
-            if ($action === 'accept') {
-                // Update vehicle ownership
-                if ($this->vehicle->transferOwnership($transfer->vehicle_id, $user_id)) {
-                    $this->transfer->updateStatus($transfer_id, 'accepted');
-                    
-                    // Notify previous owner
-                    $previous_owner = $this->user->findById($transfer->from_user_id);
-                    sendTransferAcceptedNotification($previous_owner->email, $transfer->vehicle_id);
-                    
-                    $this->session->setFlash('success', 'Vehicle transfer accepted successfully');
-                } else {
-                    $this->session->setFlash('error', 'Failed to transfer vehicle ownership');
-                }
-            } elseif ($action === 'reject') {
-                $this->transfer->updateStatus($transfer_id, 'rejected');
-                $this->session->setFlash('success', 'Vehicle transfer rejected');
-            }
+    public function handleTransfer($vin = null) {
+        $post = json_decode(file_get_contents('php://input'), true);
+        $vin = $vin ?: $post['vin'];
+        $seller = $this->user->findById($this->auth->getUserId());
+        $buyer = $this->user->findById($post['recipient_id']);
+        if (empty($post) || empty($post['vehicle_id']) || empty($post['recipient_id'])) {
+            echo json_encode(['error' => 'Vehicle or User not found']);
+            exit;
         }
-        
-        header('Location: '.$_ENV['APP_URL'].'/dashboard');
+        $vehicle = $this->vehicle->findById($post['vehicle_id']);
+        if(empty($vehicle) || $vehicle['current_status'] == "stolen" || $vehicle['user_id'] != $seller['id']) {
+            echo json_encode(['error' => 'Vehicle Validation failed']);
+            exit;
+        }
+        $this->vehicle->updateById(['user_id'=> $buyer['id']], $vehicle['id']);
+        $this->transfer->updateLast(['end_date' => 'NOW()']);
+        $this->transfer->update(['is_current' => 0], ['vehicle_id' => $vehicle['id']]);
+        $this->transfer->insertAndGet([
+            'vehicle_id' => $vehicle['id'],
+            'seller_id' => $seller['id'],
+            'buyer_id' => $buyer['id'],
+            'transfer_type' => $post['transfer_type'] ?? '',
+            'transfer_amount' => $post['transfer_amount'] ?? '',
+            'transfer_note'=> $post['transfer_note'] ?? '',
+        ]);
+        echo json_encode(['success' => true ]);
         exit;
     }
 
@@ -259,13 +254,13 @@ class VehicleController extends Controller {
             
             if (!$vehicle || $vehicle->user_id != $user_id) {
                 $this->session->setFlash('error', 'Vehicle not found or you are not the owner');
-                header('Location: '.$_ENV['APP_URL'].'/vehicles');
+                $this->redirect('vehicles');
                 exit;
             }
             
             if (empty($plate_number)) {
                 $this->session->setFlash('error', 'Plate number is required');
-                header('Location: '.$_ENV['APP_URL'].'/vehicles');
+                $this->redirect('vehicles');
                 exit;
             }
             
@@ -275,8 +270,7 @@ class VehicleController extends Controller {
                 $this->session->setFlash('error', 'Failed to assign plate number');
             }
         }
-        
-        header('Location: '.$_ENV['APP_URL'].'/vehicles');
+        $this->redirect('vehicles');
         exit;
     }
 
@@ -342,37 +336,54 @@ class VehicleController extends Controller {
     }
 
     public function viewVehicle($vin) {   
-        
-        $vehicle = $this->vehicle->findByVIN($vin);   
-        if ($this->session->get('user_id') !== $vehicle['user_id']) {
+        $vehicle = $this->vehicle->findByVIN($vin);
+        if ($this->auth->getUserId() !== $vehicle['user_id'] && !$this->auth->isAdmin() && !$this->auth->isSearcher() ) {
             $this->session->setFlash('error', 'Access denied');
-            header('Location: '.$_ENV['APP_URL'].'/dashboard');
+            $this->redirect('dashboard');
             exit;
         }
-        $vehicle = $this->vehicle->getFullProfile($vehicle['id']);
         if (!$vehicle) {
             $this->session->setFlash('error', 'Vehicle not found');
-            header('Location: '.$_ENV['APP_URL'].'/search');
+            $this->redirect('dashboard');
             exit;
         }
-        extract($vehicle);
-       
-        require_once 'app/Views/vehicle/details.php';
+        $data = [
+            'vehicle' => $vehicle,
+            'model' => $this->vehicleModel->findById($vehicle['vehicle_model_id']),
+            'plates' => $this->plateNumber->findAll(['vehicle_id'=> $vehicle['id']]),
+            'status' => $this->vehicleStatusHistory->findAll(['vehicle_id'=> $vehicle['id']]),
+            'transfer' => $this->transfer->findAll(['vehicle_id'=> $vehicle['id']]),
+            'user' => $this->user->findById($vehicle['user_id']),
+        ];
+        $this->view('vehicle/details', $data);
     }
 
-    public function viewVehicleHistory($vin) {   
+    public function viewOwnershipHistory($vin) {  
         $vehicle = $this->vehicle->findByVIN($vin); 
-        if($this->session->get('user_role') === 'driver'){
-            if ($this->session->get('user_id') !== $vehicle['user_id']) {
+        if(empty($vehicle)){
+            $this->session->setFlash('error', 'Vehicle not found');
+            $this->redirect('dashboard');
+            exit;
+        }
+        if( $this->session->get('user_role') === 'driver' &&
+            $this->session->get('user_id') !== $vehicle['user_id']
+        ){
                 $this->session->setFlash('error', 'Access denied');
-                header('Location: '.$_ENV['APP_URL'].'/dashboard');
+                $this->redirect('dashboard');
                 exit;
-            }
         }  
-        $ownership_history = $this->vehicle->getVehicleHistory($vehicle['id']);
-        $plate_history = $this->vehicle->getPlateNumberHistory($vehicle['id']);
-        $document_history = $this->vehicle->getDocumentHistory($vehicle['id']);
-        require_once 'app/Views/vehicle/history.php';
+        $data = [
+            'ownership_history' => $this->vehicle->getVehicleHistory($vehicle['id']),
+            'plate_history' => $this->vehicle->getPlateNumberHistory($vehicle['id']),
+            'document_history' => $this->vehicle->getDocumentHistory($vehicle['id']),
+            'status_history' => $this->vehicleStatusHistory->findAll(['vehicle_id'=> $vehicle['id']]),
+            'vehicle' => $vehicle
+        ];
+        $this->view('vehicle/history', $data);
+    }
+
+    public function viewStatusHistory($vin) {
+        $this->viewOwnershipHistory($vin);  
     }
 }
 ?>

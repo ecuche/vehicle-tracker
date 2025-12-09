@@ -9,7 +9,7 @@ $footer_links = '
 
 ob_start();
 ?>
-<form action="<?= $_ENV['APP_URL'] ?>/register" method="POST" class="auth-form" data-validate="true" id="registrationForm">
+<form action="<?= url('register')?>" method="POST" class="auth-form" data-validate="true" id="registrationForm">
     <?php csrf_field(); ?>
 
      <div class="mb-3">
@@ -145,9 +145,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('registrationForm');
     const passwordConfirmField = document.getElementById('password_confirm');
     const passwordStrengthDiv = document.getElementById('password-strength');
-
-
-
     const passwordField = document.getElementById('password');
     const strengthDiv = document.getElementById('password-strength');
 

@@ -8,22 +8,20 @@ class Router {
 
     public function add($route, $params = []) {
 
-    // Escape forward slashes
-    $route = preg_replace('/\//', '\\/', $route);
+        // Escape forward slashes
+        $route = preg_replace('/\//', '\\/', $route);
 
-    // Match {var}
-    $route = preg_replace('/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/', '(?P<\1>[A-Za-z0-9\-_]+)', $route);
+        // Match {var}
+        $route = preg_replace('/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/', '(?P<\1>[A-Za-z0-9\-_]+)', $route);
 
-    // Match {var:regex}
-    $route = preg_replace('/\{([a-zA-Z_][a-zA-Z0-9_]*):([^\}]+)\}/', '(?P<\1>\2)', $route);
+        // Match {var:regex}
+        $route = preg_replace('/\{([a-zA-Z_][a-zA-Z0-9_]*):([^\}]+)\}/', '(?P<\1>\2)', $route);
 
-    // Add start/end + case-insensitive
-    $route = '/^' . $route . '$/i';
+        // Add start/end + case-insensitive
+        $route = '/^' . $route . '$/i';
 
-    $this->routes[$route] = $params;
-}
-
-
+        $this->routes[$route] = $params;
+    }
 
     public function match($url) {
         // Remove query string variables
@@ -157,19 +155,23 @@ class Router {
         $this->add('vehicles', ['controller' => 'VehicleController', 'action' => 'index']);
         $this->add('vehicles/register', ['controller' => 'VehicleController', 'action' => 'register']);
         $this->add('vehicles/transfer', ['controller' => 'VehicleController', 'action' => 'transfer']);
-        $this->add('vehicles/transfer/{vin:.+}', ['controller' => 'VehicleController', 'action' => 'transferVehicle']);
+        $this->add('vehicles/transfer/{vin:[^/]+}', ['controller' => 'VehicleController', 'action' => 'transferVehicle']);
         $this->add('vehicles/handle-transfer', ['controller' => 'VehicleController', 'action' => 'handleTransfer']);
         $this->add('vehicles/assign-plate', ['controller' => 'VehicleController', 'action' => 'assignPlate']);
         $this->add('vehicles/details/{id:\d+}', ['controller' => 'VehicleController', 'action' => 'getVehicleDetails']);
-        $this->add('vehicles/view/{vin:.+}', ['controller' => 'VehicleController', 'action' => 'viewVehicle']);
-        $this->add('vehicles/history/{vin:.+}', ['controller' => 'VehicleController', 'action' => 'viewVehicleHistory']);
+        $this->add('vehicles/view/{vin:[^/]+}', ['controller' => 'VehicleController', 'action' => 'viewVehicle']);
+        $this->add('vehicles/history/{vin:[^/]+}', ['controller' => 'VehicleController', 'action' => 'viewVehicleHistory']);
         $this->add('vehicles/search-user', ['controller' => 'VehicleController', 'action' => 'searchUser']);
+        $this->add('vehicles/view/ownership-history/{vin:[^/]+}', ['controller' => 'VehicleController', 'action' => 'viewOwnershipHistory']);
+        $this->add('vehicles/view/status-history/{vin:[^/]+}', ['controller' => 'VehicleController', 'action' => 'viewStatusHistory']);
+
+        
         
         // Search routes
         $this->add('search', ['controller' => 'SearchController', 'action' => 'index']);
         $this->add('search/vehicle', ['controller' => 'SearchController', 'action' => 'searchVehicle']);
         $this->add('search/advanced', ['controller' => 'SearchController', 'action' => 'searchVehicleAdvanced']);
-        $this->add('search/vehicle-profile/{vin:.+}', ['controller' => 'SearchController', 'action' => 'getVehicleProfile']);
+        $this->add('search/vehicle-profile/{vin:[^/]+}', ['controller' => 'SearchController', 'action' => 'getVehicleProfile']);
         $this->add('search/history', ['controller' => 'SearchController', 'action' => 'getSearchHistory']);
         $this->add('search/export', ['controller' => 'SearchController', 'action' => 'exportSearchResults']);
         
@@ -179,10 +181,10 @@ class Router {
         $this->add('admin/audit', ['controller' => 'AdminController', 'action' => 'audit']);
         $this->add('admin/search-user', ['controller' => 'AdminController', 'action' => 'searchUser']);
         $this->add('admin/manage-user/{email:.+}', ['controller' => 'AdminController', 'action' => 'manageUser']);
-        $this->add('admin/manage-vehicle/{vin:.+}', ['controller' => 'AdminController', 'action' => 'manageVehicle']);
+        $this->add('admin/manage-vehicle/{vin:[^/]+}', ['controller' => 'AdminController', 'action' => 'manageVehicle']);
         $this->add('admin/user/{id:\d+}', ['controller' => 'AdminController', 'action' => 'getUserDetails']);
         $this->add('admin/user/vehicles/{email:.+}', ['controller' => 'AdminController', 'action' => 'viewUserVehicles']);
-        $this->add('admin/vehicle/users/{vin:.+}', ['controller' => 'AdminController', 'action' => 'viewVehicleUsers']);
+        $this->add('admin/vehicle/users/{vin:[^/]+}', ['controller' => 'AdminController', 'action' => 'viewVehicleUsers']);
         $this->add('admin/update-role', ['controller' => 'AdminController', 'action' => 'updateUserRole']);
         $this->add('admin/toggle-ban', ['controller' => 'AdminController', 'action' => 'toggleUserBan']);
         $this->add('admin/export-audit', ['controller' => 'AdminController', 'action' => 'exportAuditToCSV']);
@@ -197,9 +199,13 @@ class Router {
         // API routes for AJAX calls
         $this->add('api/vehicle/search', ['controller' => 'SearchController', 'action' => 'searchVehicle']);
         $this->add('api/search/vehicle', ['controller' => 'SearchController', 'action' => 'searchVehicle']);
+        $this->add('api/search/user', ['controller' => 'SearchController', 'action' => 'searchUser']);
         $this->add('api/user/search', ['controller' => 'VehicleController', 'action' => 'searchUser']);
         $this->add('api/profile/user/{identifier:.+}', ['controller' => 'ProfileController', 'action' => 'getUserProfile']);
         $this->add('api/vehicle/get-models', ['controller' => 'VehicleController', 'action' => 'getVehicleModels']);
+        $this->add('api/vehicle/change-current-plate', ['controller' => 'ApiController', 'action' => 'changeCurrentPlate']);
+        $this->add('api/vehicle/transfer-ownership/{vin:[^/]+}', ['controller' => 'vehicleController', 'action' => 'handleTransfer']);
+        $this->add('api/vehicle/assign-new-plate/{vin:[^/]+}', ['controller' => 'ApiController', 'action' => 'assignNewPlate']);
         $this->add('api/check-vin', ['controller' => 'VehicleController', 'action' => 'checkVIN']);
 
         // Admin API
@@ -207,10 +213,7 @@ class Router {
         $this->add('api/admin/delete/user', ['controller' => 'AdminController', 'action' => 'deleteUser']);
         $this->add('api/admin/update/vehicle', ['controller' => 'ApiController', 'action' => 'updateVehicle']);
         $this->add('api/admin/get-user', ['controller' => 'ApiController', 'action' => 'getUser']);
-
-
-
-
+        $this->add('api/admin/delete/vehicle', ['controller' => 'ApiController', 'action' => 'deleteVehicle']);
 
     }
 }

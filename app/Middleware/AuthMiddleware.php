@@ -36,7 +36,7 @@ class AuthMiddleware {
 
         // Check if user account is banned
         $user = $this->auth->getUser();
-        if ($user && $user->is_banned) {
+        if ($user && $user['is_banned']) {
             $this->auth->logout();
             $this->session->setFlash('error', 'Your account has been banned. Please contact administrator.');
             header('Location: '.$_ENV['APP_URL'].'/login');
@@ -44,7 +44,7 @@ class AuthMiddleware {
         }
 
         // Check if email is verified (except for email verification routes)
-        if ($user && !$user->email_verified && !$this->isEmailVerificationRoute($request['url'])) {
+        if ($user && !$user['email_verified'] && !$this->isEmailVerificationRoute($request['url'])) {
             $this->session->setFlash('warning', 'Please verify your email address to access all features.');
             // Don't block access, just show warning
         }

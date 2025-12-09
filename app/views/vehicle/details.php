@@ -7,8 +7,8 @@ ob_start();
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
-            <li class="breadcrumb-item"><a href="/vehicles">My Vehicles</a></li>
+            <li class="breadcrumb-item"><a href="<?=  url('dashboard') ?>">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="<?=  url('vehicles') ?>">My Vehicles</a></li>
             <li class="breadcrumb-item active" aria-current="page">Vehicle Details</li>
         </ol>
     </nav>
@@ -21,11 +21,11 @@ ob_start();
                     <div class="row align-items-center">
                         <div class="col-md-8">
                             <h1 class="h3 mb-1">
-                                <?= e($vehicle['make'] ?? 'Unknown'); ?> <?= e($vehicle['model'] ?? ''); ?> (<?= e($vehicle['year'] ?? ''); ?>)
+                                <?= e($model['make'] ?? 'Unknown'); ?> <?= e($model['model'] ?? ''); ?> (<?= e($vehicle['year'] ?? ''); ?>)
                             </h1>
                             <p class="text-muted mb-0">
                                 VIN: <?= e($vehicle['vin'] ?? 'N/A'); ?> | 
-                                Current Plate: <?= e($vehicle['current_plate_number'] ?? 'N/A'); ?>
+                                Current Plate: <?= e($vehicle['current_plate'] ?? 'N/A'); ?>
                             </p>
                         </div>
                         <div class="col-md-4 text-end">
@@ -48,8 +48,8 @@ ob_start();
                                 <button class="btn btn-outline-primary btn-sm" onclick="window.print()">
                                     <i class="bi bi-printer me-1"></i> Print
                                 </button>
-                                <?php if ($is_owner ?? false): ?>
-                                <a href="/vehicles/<?= $vehicle['id']; ?>/edit" class="btn btn-outline-secondary btn-sm">
+                                <?php if ($vehicle['user_id'] === $user['id']): ?>
+                                <a href="<?= url('vehicle/edit/'.$vehicle['vin']) ?>" class="btn btn-outline-secondary border border-secondary btn-sm">
                                     <i class="bi bi-pencil me-1"></i> Edit
                                 </a>
                                 <?php endif; ?>
@@ -79,17 +79,17 @@ ob_start();
                         </div>
                         <div class="col-sm-6 mb-3">
                             <strong class="text-muted">Current Plate</strong><br>
-                            <span class="fs-5 badge bg-dark"><?= e($vehicle['current_plate_number'] ?? 'N/A'); ?></span>
+                            <span class="fs-5 badge bg-dark"><?= e($vehicle['current_plate'] ?? 'N/A'); ?></span>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-sm-6 mb-3">
                             <strong class="text-muted">Make</strong><br>
-                            <?= e($vehicle['make'] ?? 'N/A'); ?>
+                            <?= e($model['make'] ?? 'N/A'); ?>
                         </div>
                         <div class="col-sm-6 mb-3">
                             <strong class="text-muted">Model</strong><br>
-                            <?= e($vehicle['model'] ?? 'N/A'); ?>
+                            <?= e($model['model'] ?? 'N/A'); ?>
                         </div>
                     </div>
                     <div class="row">
@@ -138,29 +138,29 @@ ob_start();
                     </h5>
                 </div>
                 <div class="card-body">
-                    <?php if (isset($vehicle['current_owner']) && $vehicle['current_owner']): ?>
+                    <?php if (!empty($user)): ?>
                     <div class="row">
                         <div class="col-sm-6 mb-3">
                             <strong class="text-muted">Current Owner</strong><br>
-                            <?= e($vehicle['current_owner']['name']); ?>
-                            <?php if ($is_owner ?? false): ?>
+                            <?= e($user['name']); ?>
+                            <?php if ($user['id'] === get_user_id() ?? false): ?>
                             <span class="badge bg-success ms-1">You</span>
                             <?php endif; ?>
                         </div>
                         <div class="col-sm-6 mb-3">
                             <strong class="text-muted">Role</strong><br>
-                            <span class="badge bg-info"><?= ucfirst($vehicle['current_owner']['role']); ?></span>
+                            <span class="badge bg-info"><?= ucfirst($user['role']); ?></span>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-sm-6 mb-3">
                             <strong class="text-muted">Ownership Since</strong><br>
-                            <?= e(isset($vehicle['current_owner_since']) ? date('M j, Y', strtotime($vehicle['current_owner_since'])) : 'N/A'); ?>
+                            <?= e(isset($transfer[0]['created_at']) ? date('M j, Y', strtotime($transfer[0]['created_at'])) : 'N/A'); ?>
                         </div>
                         <div class="col-sm-6 mb-3">
                             <strong class="text-muted">Ownership Type</strong><br>
-                            <span class="badge bg-<?= $vehicle['is_original_owner'] ? 'success' : 'primary'; ?>">
-                                <?= $vehicle['is_original_owner'] ? 'Original Owner' : 'Transferred'; ?>
+                            <span class="badge bg-<?= $transfer[0]['buyer_id'] === $user['id']  ? 'success' : 'primary'; ?>">
+                                <?= $transfer[0]['buyer_id'] === $user['id']  ? 'Original Owner' : 'Transferred'; ?>
                             </span>
                         </div>
                     </div>
@@ -174,7 +174,7 @@ ob_start();
             </div>
 
             <!-- Transfer Vehicle -->
-            <?php if ($is_owner ?? false && $vehicle['current_status'] !== 'stolen'): ?>
+            <?php if ($vehicle['user_id'] === $user['id'] && $vehicle['current_status'] !== 'stolen'): ?>
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
@@ -184,9 +184,9 @@ ob_start();
                 <div class="card-body">
                     <p class="text-muted">Transfer ownership of this vehicle to another user.</p>
                     <div class="d-grid gap-2">
-                        <button type="button" class="btn btn-outline-primary" onclick="initiateTransfer()">
+                        <a class="btn btn-outline-warning border" href="<?= url('vehicles/transfer/'.$vehicle['vin']) ?>">
                             <i class="bi bi-arrow-left-right me-1"></i> Initiate Transfer
-                        </button>
+                        </a>
                     </div>
                     <div class="mt-3">
                         <small class="text-muted">
@@ -207,7 +207,7 @@ ob_start();
                     <h5 class="card-title mb-0">
                         <i class="bi bi-images me-2"></i>Vehicle Images
                     </h5>
-                    <?php if ($is_owner ?? false): ?>
+                    <?php if ($vehicle['user_id'] === $user['id']): ?>
                     <button type="button" class="btn btn-sm btn-outline-primary" onclick="manageImages()">
                         <i class="bi bi-plus-circle me-1"></i> Add Images
                     </button>
@@ -224,7 +224,7 @@ ob_start();
                                     <img src="<?= e($image['url']); ?>" class="img-thumbnail w-100" 
                                          alt="Vehicle image" style="height: 120px; object-fit: cover;">
                                 </a>
-                                <?php if ($is_owner ?? false): ?>
+                                <?php if ($vehicle['user_id'] === $user['id']): ?>
                                 <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1" 
                                         onclick="deleteImage(<?= $image['id']; ?>)" 
                                         style="width: 25px; height: 25px; padding: 0;">
@@ -239,7 +239,7 @@ ob_start();
                     <div class="text-center py-4">
                         <i class="bi bi-image display-1 text-muted"></i>
                         <p class="text-muted mt-2">No vehicle images available</p>
-                        <?php if ($is_owner ?? false): ?>
+                        <?php if ($vehicle['user_id'] === $user['id']): ?>
                         <button type="button" class="btn btn-primary mt-2" onclick="manageImages()">
                             <i class="bi bi-plus-circle me-1"></i> Add Images
                         </button>
@@ -255,7 +255,7 @@ ob_start();
                     <h5 class="card-title mb-0">
                         <i class="bi bi-file-earmark me-2"></i>Vehicle Documents
                     </h5>
-                    <?php if ($is_owner ?? false): ?>
+                    <?php if ($vehicle['user_id'] === $user['id']): ?>
                     <button type="button" class="btn btn-sm btn-outline-primary" onclick="manageDocuments()">
                         <i class="bi bi-plus-circle me-1"></i> Add Documents
                     </button>
@@ -285,7 +285,7 @@ ob_start();
                                        download title="Download Document">
                                         <i class="bi bi-download"></i>
                                     </a>
-                                    <?php if ($is_owner ?? false): ?>
+                                    <?php if ($vehicle['user_id'] === $user['id']): ?>
                                     <button type="button" class="btn btn-sm btn-outline-danger" 
                                             onclick="deleteDocument(<?= $document['id']; ?>)" 
                                             title="Delete Document">
@@ -301,7 +301,7 @@ ob_start();
                     <div class="text-center py-4">
                         <i class="bi bi-file-earmark-x display-1 text-muted"></i>
                         <p class="text-muted mt-2">No vehicle documents available</p>
-                        <?php if ($is_owner ?? false): ?>
+                        <?php if ($vehicle['user_id'] === $user['id']): ?>
                         <button type="button" class="btn btn-primary mt-2" onclick="manageDocuments()">
                             <i class="bi bi-plus-circle me-1"></i> Add Documents
                         </button>
@@ -320,20 +320,12 @@ ob_start();
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <?php if ($is_owner ?? false): ?>
-                        <button type="button" class="btn btn-outline-primary text-start" onclick="assignNewPlate()">
-                            <i class="bi bi-123 me-2"></i> Assign New Plate Number
-                        </button>
-                        <button type="button" class="btn btn-outline-info text-start" onclick="viewPlateHistory()">
-                            <i class="bi bi-clock-history me-2"></i> View Plate History
-                        </button>
-                        <?php endif; ?>
-                        <button type="button" class="btn btn-outline-secondary text-start" onclick="viewOwnershipHistory()">
+                        <a class="btn btn-outline-warning text-start border" href="<?= url('vehicles/view/ownership-history/'.$vehicle['vin']) ?>">
                             <i class="bi bi-diagram-3 me-2"></i> View Ownership History
-                        </button>
-                        <button type="button" class="btn btn-outline-warning text-start" onclick="generateReport()">
-                            <i class="bi bi-file-pdf me-2"></i> Generate Vehicle Report
-                        </button>
+                        </a>
+                        <a class="btn btn-outline-info text-start border" href="<?= url('vehicles/view/status-history/'.$vehicle['vin']) ?>">
+                            <i class="bi bi-diagram-3 me-2"></i> View Status History
+                        </a>
                     </div>
                 </div>
             </div>
@@ -348,14 +340,14 @@ ob_start();
                     <h5 class="card-title mb-0">
                         <i class="bi bi-123 me-2"></i>Plate Number History
                     </h5>
-                    <?php if ($is_owner ?? false): ?>
+                    <?php if ($vehicle['user_id'] === $user['id']): ?>
                     <button type="button" class="btn btn-sm btn-outline-primary" onclick="assignNewPlate()">
                         <i class="bi bi-plus-circle me-1"></i> Assign New Plate
                     </button>
                     <?php endif; ?>
                 </div>
                 <div class="card-body">
-                    <?php if (isset($vehicle['plate_history']) && !empty($vehicle['plate_history'])): ?>
+                    <?php if (!empty($plates)): ?>
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead>
@@ -364,13 +356,13 @@ ob_start();
                                     <th>Assigned Date</th>
                                     <th>Assigned By</th>
                                     <th>Status</th>
-                                    <?php if ($is_owner ?? false): ?>
+                                    <?php if ($user['id'] === get_user_id()): ?>
                                     <th>Actions</th>
                                     <?php endif; ?>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($vehicle['plate_history'] as $plate): ?>
+                                <?php foreach ($plates as $plate): ?>
                                 <tr class="<?= $plate['is_current'] ? 'table-active' : ''; ?>">
                                     <td>
                                         <strong class="<?= $plate['is_current'] ? 'text-primary' : ''; ?>">
@@ -380,7 +372,7 @@ ob_start();
                                         <span class="badge bg-success ms-1">Current</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td><?= date('M j, Y', strtotime($plate['assigned_date'])); ?></td>
+                                    <td><?= date('M j, Y', strtotime($plate['assigned_at'])); ?></td>
                                     <td>
                                         <?= e($plate['assigned_by_name'] ?? 'System'); ?>
                                         <?php if (isset($plate['assigned_by_role'])): ?>
@@ -388,13 +380,13 @@ ob_start();
                                         <?php endif; ?>
                                     </td>
                                     <td>
-                                        <span class="badge bg-<?= $plate['is_active'] ? 'success' : 'secondary'; ?>">
-                                            <?= $plate['is_active'] ? 'Active' : 'Inactive'; ?>
+                                        <span class="badge bg-<?= $plate['is_current'] ? 'success' : 'secondary'; ?>">
+                                            <?= $plate['is_current'] ? 'Active' : 'Inactive'; ?>
                                         </span>
                                     </td>
-                                    <?php if ($is_owner ?? false): ?>
+                                    <?php if ($user['id'] === get_user_id()): ?>
                                     <td>
-                                        <?php if (!$plate['is_current'] && $plate['is_active']): ?>
+                                        <?php if (!$plate['is_current']): ?>
                                         <button type="button" class="btn btn-sm btn-outline-primary" 
                                                 onclick="setAsCurrentPlate(<?= $plate['id']; ?>)">
                                             Set as Current
@@ -411,7 +403,7 @@ ob_start();
                     <div class="text-center py-4">
                         <i class="bi bi-123 display-1 text-muted"></i>
                         <p class="text-muted mt-2">No plate number history available</p>
-                        <?php if ($is_owner ?? false): ?>
+                        <?php if ($vehicle['user_id'] === $user['id']): ?>
                         <button type="button" class="btn btn-primary mt-2" onclick="assignNewPlate()">
                             <i class="bi bi-plus-circle me-1"></i> Assign First Plate
                         </button>
@@ -420,102 +412,6 @@ ob_start();
                     <?php endif; ?>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Recent Activity -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-activity me-2"></i>Recent Activity
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <?php if (isset($vehicle['recent_activity']) && !empty($vehicle['recent_activity'])): ?>
-                    <div class="timeline">
-                        <?php foreach ($vehicle['recent_activity'] as $activity): ?>
-                        <div class="timeline-item">
-                            <div class="timeline-marker bg-<?= getActivityColor($activity['action']); ?>"></div>
-                            <div class="timeline-content">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <h6 class="mb-1 text-capitalize">
-                                            <?= str_replace('_', ' ', $activity['action']); ?>
-                                        </h6>
-                                        <p class="mb-1 small text-muted">
-                                            By: <?= e($activity['user_name'] ?? 'System'); ?>
-                                            <?php if (isset($activity['user_role'])): ?>
-                                            (<?= ucfirst($activity['user_role']); ?>)
-                                            <?php endif; ?>
-                                        </p>
-                                        <?php if ($activity['description']): ?>
-                                        <p class="mb-0 small"><?= e($activity['description']); ?></p>
-                                        <?php endif; ?>
-                                    </div>
-                                    <small class="text-muted"><?= date('M j, g:i A', strtotime($activity['created_at'])); ?></small>
-                                </div>
-                            </div>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-                    <?php else: ?>
-                    <div class="text-center py-4">
-                        <i class="bi bi-activity display-1 text-muted"></i>
-                        <p class="text-muted mt-2">No recent activity found</p>
-                    </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Transfer Modal -->
-<div class="modal fade" id="transferModal" tabindex="-1" aria-labelledby="transferModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="transferModalLabel">Transfer Vehicle Ownership</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="transferForm" method="POST" action="/vehicles/<?= $vehicle['id']; ?>/transfer">
-                <div class="modal-body">
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle me-2"></i>
-                        You are about to transfer ownership of your vehicle to another user.
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="recipient_identifier" class="form-label">Recipient (Email, Phone, or NIN)</label>
-                        <input type="text" class="form-control" id="recipient_identifier" name="recipient_identifier" 
-                               placeholder="Enter recipient's email, phone number, or NIN" required>
-                        <div class="form-text">Enter the email address, phone number, or NIN of the recipient</div>
-                    </div>
-                    
-                    <div id="recipientDetails" class="d-none">
-                        <div class="card bg-light">
-                            <div class="card-body">
-                                <h6 class="card-title">Recipient Details</h6>
-                                <div id="recipientInfo"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="transfer_notes" class="form-label">Transfer Notes (Optional)</label>
-                        <textarea class="form-control" id="transfer_notes" name="transfer_notes" rows="3" 
-                                  placeholder="Add any notes about this transfer..."></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="transferBtn" disabled>
-                        <i class="bi bi-arrow-left-right me-1"></i> Initiate Transfer
-                    </button>
-                </div>
-            </form>
         </div>
     </div>
 </div>
@@ -528,18 +424,24 @@ ob_start();
                 <h5 class="modal-title" id="assignPlateModalLabel">Assign New Plate Number</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="assignPlateForm" method="POST" action="/vehicles/<?= $vehicle['id']; ?>/plates">
+            <form id="assignPlateForm" method="POST" action="<?= url('api/vehicle/assign-new-plate/'.$vehicle['vin']) ?>">
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="plate_number" class="form-label">Plate Number</label>
-                        <input type="text" class="form-control" id="plate_number" name="plate_number" 
+                        <label for="new_plate" class="form-label">Plate Number</label>
+                        <input type="text" class="form-control" id="new_plate" name="new_plate" data-validation="required|plate_number"
                                placeholder="Enter plate number" required>
                         <div class="form-text">Enter the new plate number for this vehicle</div>
                     </div>
+                    <div class="mb-3">
+                        <label for="assign_date" class="form-label">Date Assigned</label>
+                        <input type="date" class="form-control" id="assign_date" name="assign_date" 
+                               placeholder="Assigned Date" required>
+                        <div class="form-text">Enter the Date of new plate number for this vehicle</div>
+                    </div>
                     
                     <div class="mb-3">
-                        <label for="assignment_notes" class="form-label">Notes (Optional)</label>
-                        <textarea class="form-control" id="assignment_notes" name="assignment_notes" rows="2" 
+                        <label for="new_note" class="form-label">Notes (Optional)</label>
+                        <textarea class="form-control" id="new_note" name="new_note" rows="2" 
                                   placeholder="Add any notes about this plate assignment..."></textarea>
                     </div>
                 </div>
@@ -616,6 +518,12 @@ ob_start();
 <?php $styles = ob_get_clean(); ?>
 <?php ob_start(); ?>
 <script>
+    $(() => {
+        $('#new_plate').on('keyup', function(){
+
+        })
+
+    });
 document.addEventListener('DOMContentLoaded', function() {
     initializeVehicleDetails();
 });
@@ -636,11 +544,6 @@ function initializeVehicleDetails() {
         transferForm.addEventListener('submit', handleTransfer);
     }
     
-    // Recipient search
-    const recipientInput = document.getElementById('recipient_identifier');
-    if (recipientInput) {
-        recipientInput.addEventListener('input', debounce(searchRecipient, 500));
-    }
     
     // Plate assignment form
     const plateForm = document.getElementById('assignPlateForm');
@@ -648,6 +551,19 @@ function initializeVehicleDetails() {
         plateForm.addEventListener('submit', handlePlateAssignment);
     }
 }
+
+// Real-time validation for all fields
+    const plateForm = document.getElementById('assignPlateForm');
+    const plateFields = plateForm.querySelectorAll('[data-validation]');
+    plateFields.forEach(field => {
+        field.addEventListener('blur', function() {
+            window.FormValidation.validateField(this);
+        });
+        
+        field.addEventListener('input', function() {
+            window.FormValidation.clearFieldValidation(this);
+        });
+    });
 
 function debounce(func, wait) {
     let timeout;
@@ -661,102 +577,6 @@ function debounce(func, wait) {
     };
 }
 
-function initiateTransfer() {
-    const modal = new bootstrap.Modal(document.getElementById('transferModal'));
-    modal.show();
-}
-
-function searchRecipient() {
-    const identifier = document.getElementById('recipient_identifier').value.trim();
-    const recipientDetails = document.getElementById('recipientDetails');
-    const recipientInfo = document.getElementById('recipientInfo');
-    const transferBtn = document.getElementById('transferBtn');
-    
-    if (identifier.length < 3) {
-        recipientDetails.classList.add('d-none');
-        transferBtn.disabled = true;
-        return;
-    }
-    
-    // Show loading
-    recipientInfo.innerHTML = '<div class="text-center"><div class="spinner-border spinner-border-sm"></div> Searching...</div>';
-    recipientDetails.classList.remove('d-none');
-    
-    fetch(`/users/search?q=${encodeURIComponent(identifier)}`)
-        .then(response => response.json())
-        .then(users => {
-            if (users.length > 0) {
-                const user = users[0];
-                recipientInfo.innerHTML = `
-                    <div class="row">
-                        <div class="col-12">
-                            <strong>Name:</strong> ${user.name}<br>
-                            <strong>Email:</strong> ${user.email}<br>
-                            <strong>Phone:</strong> ${user.phone || 'N/A'}<br>
-                            <strong>Role:</strong> <span class="badge bg-info">${user.role}</span>
-                        </div>
-                    </div>
-                `;
-                transferBtn.disabled = false;
-            } else {
-                recipientInfo.innerHTML = `
-                    <div class="alert alert-warning mb-0">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        No user found with that identifier
-                    </div>
-                `;
-                transferBtn.disabled = true;
-            }
-        })
-        .catch(error => {
-            console.error('Search error:', error);
-            recipientInfo.innerHTML = `
-                <div class="alert alert-danger mb-0">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    Error searching for user
-                </div>
-            `;
-            transferBtn.disabled = true;
-        });
-}
-
-function handleTransfer(e) {
-    e.preventDefault();
-    const form = e.target;
-    const formData = new FormData(form);
-    const transferBtn = document.getElementById('transferBtn');
-    
-    // Disable button and show loading
-    transferBtn.disabled = true;
-    transferBtn.innerHTML = '<div class="spinner-border spinner-border-sm me-1"></div> Transferring...';
-    
-    fetch(form.action, {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            App.showToast('Transfer initiated successfully', 'success');
-            bootstrap.Modal.getInstance(document.getElementById('transferModal')).hide();
-            
-            // Reload page after delay
-            setTimeout(() => {
-                window.location.reload();
-            }, 2000);
-        } else {
-            throw new Error(data.error || 'Transfer failed');
-        }
-    })
-    .catch(error => {
-        console.error('Transfer error:', error);
-        App.showToast(error.message, 'error');
-        
-        // Re-enable button
-        transferBtn.disabled = false;
-        transferBtn.innerHTML = '<i class="bi bi-arrow-left-right me-1"></i> Initiate Transfer';
-    });
-}
 
 function assignNewPlate() {
     const modal = new bootstrap.Modal(document.getElementById('assignPlateModal'));
@@ -766,26 +586,34 @@ function assignNewPlate() {
 function handlePlateAssignment(e) {
     e.preventDefault();
     const form = e.target;
-    const formData = new FormData(form);
-    
-    fetch(form.action, {
+    plate = $('#new_plate').val();
+    note = $('#new_note').val();
+    assign_date = $('#assign_date').val();
+
+    $.ajax({
         method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            App.showToast('Plate number assigned successfully', 'success');
-            bootstrap.Modal.getInstance(document.getElementById('assignPlateModal')).hide();
-            window.location.reload();
-        } else {
-            throw new Error(data.error || 'Plate assignment failed');
+        url: form.action,
+        data: {
+            plate: plate,
+            note: note,
+            assign_date: assign_date
+        },
+        success: function (response) {
+            const data = JSON.parse(response);
+            if (data.success) {
+                App.showToast('Plate number assigned as current', 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                App.showToast(data.error, 'error');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Plate update error:', xhr.responseText);
         }
-    })
-    .catch(error => {
-        console.error('Plate assignment error:', error);
-        App.showToast(error.message, 'error');
     });
+
 }
 
 function manageImages() {
@@ -840,54 +668,34 @@ function deleteDocument(documentId) {
 
 function setAsCurrentPlate(plateId) {
     if (confirm('Set this plate number as current?')) {
-        fetch(`/vehicles/<?= $vehicle['id']; ?>/plates/${plateId}/set-current`, {
-            method: 'POST'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                App.showToast('Plate number set as current', 'success');
-                window.location.reload();
-            } else {
-                throw new Error(data.error || 'Operation failed');
+
+        $.ajax({
+            type: "POST",
+            url: appUrl + "/api/vehicle/change-current-plate",
+            data: {
+                plate_id: plateId
+            },
+            success: function (response) {
+                const data = JSON.parse(response);
+                if (data.success) {
+                    App.showToast('Plate number set as current', 'success');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    throw new Error(data.error || 'Operation failed');
+                }
+            },
+            error: function(error){
+                console.error('Plate update error:', error);
+                App.showToast(error.message, 'error');
             }
-        })
-        .catch(error => {
-            console.error('Plate update error:', error);
-            App.showToast(error.message, 'error');
         });
+       
     }
 }
 
-function viewPlateHistory() {
-    // Scroll to plate history section
-    document.querySelector('#plateHistory').scrollIntoView({ behavior: 'smooth' });
-}
-
-function viewOwnershipHistory() {
-    App.showToast('Ownership history feature coming soon', 'info');
-}
-
-function generateReport() {
-    App.showToast('Report generation feature coming soon', 'info');
-}
 </script>
-
-<?php
-// Helper function for activity colors
-function getActivityColor($action) {
-    $colors = [
-        'register' => 'primary',
-        'update' => 'info',
-        'transfer' => 'warning',
-        'status_change' => 'danger',
-        'plate_assignment' => 'success',
-        'document_upload' => 'secondary'
-    ];
-    return $colors[$action] ?? 'secondary';
-}
-?>
-
 <?php
 $scripts = ob_get_clean();
 include 'app/Views/layouts/main.php';

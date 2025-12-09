@@ -6,16 +6,21 @@ class ApiController extends Controller {
 
     public function __construct() {
         parent::__construct();
-        
-        if (!$this->auth->isAdmin()) {
+    }
+
+    public function checkRole(string $role = 'driver') {
+        if($role === 'admin' && !$this->auth->isAdmin() ||
+            $role === 'driver' && !$this->auth->isDriver() ||
+            $role === 'searcher' && !$this->auth->isSearcher()
+        ) {
             echo json_encode(['error' => 'access denied']);
             exit;
         }
     }
 
     public function getUser(){
-        $field = $_POST['field'];
-        $value = $_POST['value'];
+        $field = $this->request->post('field');
+        $value = $this->request->post('value');
         $user = $this->user->findbyColumn($field, $value);
         if(!empty($field && !empty($value) && !empty($user))){
             echo json_encode($user);
@@ -113,5 +118,58 @@ class ApiController extends Controller {
 
         }
     }
+
+    public function deleteVehicle(){
+        $vin = $this->request->post('vin');
+        if($this->vehicle->softDelete(['vin'=> $vin])){
+            echo json_encode(['success'=> 'vehicle has been deleted']);
+        }else{
+            echo json_encode(['error'=> 'could not delete Vehicle']);
+            exit;
+        }
+    }
+
+    public function changeCurrentPlate(){
+        $this->checkRole();
+        $plate_id = $this->request->post('plate_id');
+        $plate = $this->plateNumber->findById($plate_id);
+        if(empty($plate)){
+            echo json_encode(['error'=>'provide correct vehicle Plate Number']);
+            exit;
+        }
+        $vehicle = $this->vehicle->findById($plate['vehicle_id']);
+        $this->vehicle->updateById(['current_plate'=> $plate['plate_number'], 'current_plate_id' => $plate['id']], $plate['vehicle_id']);
+        $this->plateNumber->update(['is_current'=> 0],  ['vehicle_id' => $vehicle['id']]);
+        $this->plateNumber->updateById(['is_current'=> 1], $plate['id']);
+        $plate['success'] = true;
+        echo json_encode($plate);
+        exit;
+    }
+
+    public function assignNewPlate($vin){
+        $this->checkRole();
+        $vehicle = $this->vehicle->findByVIN($vin);
+        if(empty($vehicle)){
+            echo json_encode(['error'=> 'Vehicle Error']);
+            exit;
+        }
+        $plate = $this->request->post('plate');
+        if(!$this->validator->validatePlateNumber($plate)){
+            echo json_encode(['error'=> 'Wrong Plate Number Format']);
+            exit;
+        }
+        if($this->plateNumber->exists(['plate_number' => $plate])){
+            echo json_encode(['error'=> 'Plate Number is already registered']);
+            exit;
+        }
+        $note = $this->request->post('note');
+        $date = $this->request->post('assign_date');
+        $this->plateNumber->update(['is_current' => 0], ['vehicle_id'=> $vehicle['id']]);
+        $plate = $this->plateNumber->insertAndGet(['vehicle_id'=> $vehicle['id'], 'plate_number'=> strtoupper($plate), 'note'=>$note, 'assigned_at' => $date]);
+        $plate['success'] = true;   
+        echo json_encode($plate);
+        exit;
+
+    } 
 }
 ?>

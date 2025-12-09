@@ -57,15 +57,15 @@ CREATE TABLE plate_numbers (
 CREATE TABLE ownership_transfers (
     id INT PRIMARY KEY AUTO_INCREMENT,
     vehicle_id INT NOT NULL,
-    from_user_id INT NOT NULL,
-    to_user_id INT NOT NULL,
+    seller_id INT NOT NULL,
+    buyer_id INT NOT NULL,
     status ENUM('pending', 'accepted', 'rejected') DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP NULL,
     FOREIGN KEY (vehicle_id) REFERENCES vehicles(id),
-    FOREIGN KEY (from_user_id) REFERENCES users(id),
-    FOREIGN KEY (to_user_id) REFERENCES users(id)
+    FOREIGN KEY (seller_id) REFERENCES users(id),
+    FOREIGN KEY (buyer_id) REFERENCES users(id)
 );
 
 -- Audit trail table

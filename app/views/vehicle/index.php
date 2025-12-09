@@ -120,107 +120,14 @@ ob_start();
                         </td>
                         <td>
                             <div class="btn-group btn-group-sm">
-                                <a href="<?= $_ENV["APP_URL"] ?>/vehicles/view/<?= $vehicle->vin; ?>" 
+                                <a href="<?= url('vehicles/view/'.$vehicle->vin) ?>" 
                                    class="btn btn-outline-primary" 
                                    title="View Details">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                
-                                <button type="button" 
-                                        class="btn btn-outline-secondary" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#transferModal<?= $vehicle->id; ?>"
-                                        title="Transfer Ownership">
-                                    <i class="bi bi-arrow-left-right"></i>
-                                </button>
-                                
-                                <button type="button" 
-                                        class="btn btn-outline-info" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#plateModal<?= $vehicle->id; ?>"
-                                        title="Assign Plate">
-                                    <i class="bi bi-123"></i>
-                                </button>
                             </div>
                         </td>
                     </tr>
-
-                    <!-- Transfer Modal -->
-                    <div class="modal fade" id="transferModal<?= $vehicle->id; ?>" tabindex="-1">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">Transfer Vehicle Ownership</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                </div>
-                                <form action="<?= $_ENV["APP_URL"] ?>/vehicles/transfer" method="POST">
-                                    <?php csrf_field(); ?>
-                                    <input type="hidden" name="vehicle_id" value="<?= $vehicle->id; ?>">
-                                    <div class="modal-body">
-                                        <div class="alert alert-info">
-                                            <i class="bi bi-info-circle"></i>
-                                            You are about to transfer ownership of:<br>
-                                            <strong><?= e($vehicle->make); ?> <?= e($vehicle->model); ?> (<?= e($vehicle->vin); ?>)</strong>
-                                        </div>
-                                        
-                                        <div class="mb-3">
-                                            <label for="user_identifier" class="form-label">Recipient</label>
-                                            <input type="text" 
-                                                   class="form-control" 
-                                                   id="user_identifier" 
-                                                   name="user_identifier" 
-                                                   placeholder="Enter email, phone, or NIN"
-                                                   required>
-                                            <div class="form-text">
-                                                Enter the recipient's email, phone number, or NIN
-                                            </div>
-                                        </div>
-                                        
-                                        <div id="user-search-results" class="mt-2"></div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                        <button type="submit" class="btn btn-primary">Initiate Transfer</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Plate Assignment Modal -->
-                    <div class="modal fade" id="plateModal<?= $vehicle->id; ?>" tabindex="-1">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">Assign New Plate Number</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                </div>
-                                <form action="<?= $_ENV["APP_URL"] ?>/vehicles/assign-plate" method="POST">
-                                    <?php csrf_field(); ?>
-                                    <input type="hidden" name="vehicle_id" value="<?= $vehicle->id; ?>">
-                                    <div class="modal-body">
-                                        <div class="mb-3">
-                                            <label for="plate_number" class="form-label">New Plate Number</label>
-                                            <input type="text" 
-                                                   class="form-control" 
-                                                   id="plate_number" 
-                                                   name="plate_number" 
-                                                   value="<?= e($vehicle->current_plate_number); ?>"
-                                                   data-validation="plate_number"
-                                                   required>
-                                            <div class="form-text">
-                                                Current plate: <strong><?= e($vehicle->current_plate_number); ?></strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                        <button type="submit" class="btn btn-primary">Assign Plate</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
                     <?php endforeach; ?>
                 </tbody>
             </table>

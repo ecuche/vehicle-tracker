@@ -8,7 +8,7 @@ class SearchController extends Controller {
         parent::__construct();
         
         if (!$this->auth->isLoggedIn()) {
-            header('Location: '.$_ENV['APP_URL'].'/login');
+            $this->redirect("login");
             exit;
         }
     }
@@ -19,10 +19,10 @@ class SearchController extends Controller {
         // Only searcher and admin can access search page
         if (!in_array($user_role, ['searcher', 'admin'])) {
             $this->session->setFlash('error', 'Access denied');
-            header('Location: '.$_ENV['APP_URL'].'/dashboard');
+            $this->redirect('dashboard');
             exit;
         }
-        require_once 'app/Views/search/index.php';
+        $this->view('search/index');
     }
 
     public function searchVehicle() {
@@ -33,11 +33,8 @@ class SearchController extends Controller {
             echo json_encode(['error' => 'Access denied']);
             exit;
         }
-
-
         $search_type = $_GET['type'] ?? ''; // 'vin' or 'plate'
         $search_term = trim($_GET['term'] ?? '');
-
         
         if (empty($search_type) || empty($search_term)) {
             header('Content-Type: application/json');
@@ -218,6 +215,28 @@ class SearchController extends Controller {
         }
         
         fclose($output);
+        exit;
+    }
+
+    public function searchUser(){
+        $value = $this->request->post('value');
+            $field = match (true) {
+                $this->validator->validateEmail($value) => 'email',
+                $this->validator->validateNIN($value) => 'nin',
+                $this->validator->validatePhone($value) => 'phone',
+                default => 'phone',
+            };
+        $users = $this->user->findAll([$field=>$value]);
+        if(empty($users)){
+            echo json_encode(['error' => 'User not found']);    
+            exit;
+        }
+        if($users[0]['id'] === $this->auth->getUserId()){
+            echo json_encode(['error' => 'You are this User']);    
+            exit;
+        }
+        $users[0]['success'] = true;   
+        echo json_encode($users);    
         exit;
     }
 }

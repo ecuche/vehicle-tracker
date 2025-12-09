@@ -1,22 +1,22 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="<?= current_theme(); ?>" appUrl="<?= $_ENV['APP_URL'] ?>">
+<html lang="en" data-theme="<?= current_theme(); ?>" appUrl="<?= url() ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= isset($title) ? $title . ' - Vehicle Tracker' : 'Vehicle Tracker'; ?></title>
+    <title><?= isset($title) ? $title . ' - '.$_ENV['APP_NAME'] : $_ENV['APP_NAME']; ?></title>
     
     <!-- Bootstrap 5 CSS -->
     <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"> -->
-    <link rel="stylesheet" href="<?= $_ENV['APP_URL'] ?>/public/assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<?= url('public/assets/css/bootstrap.min.css') ?>">
 
     <!-- Bootstrap Icons -->
     <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css"> -->
-    <link rel="stylesheet" href="<?= $_ENV['APP_URL'] ?>/public/assets/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="<?= url('public/assets/bootstrap-icons/bootstrap-icons.css') ?>">
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="<?= $_ENV['APP_URL'] ?>/public/assets/css/style.css">
-    <link rel="stylesheet" href="<?= $_ENV['APP_URL'] ?>/public/assets/css/dark-mode.css">
-    <link rel="stylesheet" href="<?= $_ENV['APP_URL'] ?>/public/assets/css/light-mode.css">
+    <link rel="stylesheet" href="<?= url('public/assets/css/style.css') ?>">
+    <link rel="stylesheet" href="<?= url('public/assets/css/dark-mode.css') ?>">
+    <link rel="stylesheet" href="<?= url('public/assets/css/light-mode.css') ?>">
 
     
     <!-- Additional Styles -->
@@ -107,7 +107,7 @@
     <meta name="csrf-token" content="<?= csrf_token(); ?>">
     
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="<?= $_ENV['APP_URL'] ?>/public/assets/images/favicon.ico">
+    <link rel="icon" type="image/x-icon" href="<?= url('public/assets/images/favicon.ico') ?>">
     <script>
         const appUrl = document.getElementsByTagName("html")[0].getAttribute("appUrl");
     </script>
@@ -173,19 +173,19 @@
     
     <!-- JQuery JS -->
     <!-- <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script> -->
-    <script src="<?= $_ENV['APP_URL'] ?>/public/assets/js/jquery.min.js"></script>
+    <script src="<?= url('public/assets/js/jquery.min.js') ?>"></script>
 
 
     <!-- Bootstrap JS -->
     <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script> -->
-    <script src="<?= $_ENV['APP_URL'] ?>/public/assets/js/bootstrap.bundle.min.js"></script>
+    <script src="<?= url('public/assets/js/bootstrap.bundle.min.js') ?>"></script>
 
 
     <!-- Custom JS -->
-    <script src="<?= $_ENV['APP_URL'] ?>/public/assets/js/theme.js"></script>
-    <script src="<?= $_ENV['APP_URL'] ?>/public/assets/js/validation.js"></script>
-    <script src="<?= $_ENV['APP_URL'] ?>/public/assets/js/ajax.js"></script>
-    <!-- <script src="<?= $_ENV['APP_URL'] ?>/public/assets/js/app.js"></script> -->
+    <script src="<?= url('public/assets/js/theme.js') ?>"></script>
+    <script src="<?= url('public/assets/js/validation.js') ?>"></script>
+    <script src="<?= url('public/assets/js/ajax.js') ?>"></script>
+    <!-- <script src="<?= url('public/assets/js/app.js') ?>"></script> -->
 
      <!-- Page-specific JS -->
     <?php if (isset($scripts)): ?>

@@ -67,9 +67,9 @@ class AdminController extends Controller {
         if ($user) {
             $vehicles = $this->user->getUserVehiclesWithHistory($user_id);
             $contact_details = [
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'nin' => $user->nin
+                'email' => $user['email'],
+                'phone' => $user['phone'],
+                'nin' => $user['nin']
             ];
             
             $data = [
@@ -275,7 +275,7 @@ class AdminController extends Controller {
             'user_actions' => $user_actions,
             'admin_actions' => $admin_actions 
         ];
-        $this->view('admin/audit');
+        $this->view('admin/audit', $data);
     }
 
     public function exportAuditToCSV() {
@@ -422,39 +422,7 @@ class AdminController extends Controller {
     }
 
     public function updateVehicle(){
-        if (empty($_POST['vin'])) {
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'Unauthorized']);
-            exit;
-        }
-        $vehicle = $this->vehicle->findByVIN($_POST['vin']);
-        if (!$vehicle) {
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'Vehicle not found']);
-            return;
-        }
-
-        echo json_encode($vehicle);
-        exit;
-
-
-
-        // $data = [
-        //     'make' => $post['make'],
-        //     'model' => $post['model'],
-        //     'year' => $post['year'],
-        //     'color' => $post['color'],
-        //     'current_status' => $post['current_status']
-        // ];
-        
-        if ($this->vehicle->updateVehicle($vehicle['id'], $data)) {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => true]);
-        } else {
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'Failed to update vehicle']);
-        }
-        exit;
+       exit;
     }
 
     public function viewVehicleUsers($vin){
@@ -487,17 +455,25 @@ class AdminController extends Controller {
     }
 
     public function viewUserVehicles($email){
+        $page = $this->request->get('page',1);
+        $per_page = $this->request->get('per_page',10);
         $user = $this->user->findByEmail($email);
         if (empty($user)) {
             $this->session->setFlash('error', 'User does not exist');
             header('Location: '.$_ENV['APP_URL'].'/dashboard');
             exit;
         }
-        $vehicles = $this->user->getUserVehiclesWithHistory($user['id']);
+        $count = $this->transfer->countRow(['buyer_id'=>$user['id']]);
+        $offset = ($page -1) * $per_page;
+        $pagination = [
+            'current_page' => $page,
+            'total_pages' => ceil($count / $per_page),
+        ];
+        $vehicles = $this->transfer->getUserVehicleHistoryPagination($user['id'], $offset, $per_page);
         $data = [
             'user' => $user,
             'vehicles' => $vehicles,
-
+            'pagination'=> $pagination
         ];
         $this->view('admin/user-vehicles', $data);
     }

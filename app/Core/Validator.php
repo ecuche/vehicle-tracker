@@ -180,8 +180,8 @@ class Validator {
     }
 
     public static function validateNIN($nin) {
-        // National Identification Number - 11 digits
-        return preg_match('/^\d{11}$/', $nin) === 1;
+        // National Identification Number - 11 digits, cannot start with 0
+        return preg_match('/^[1-9]\d{10}$/', $nin) === 1;
     }
 
     public static function validateVIN($vin) {

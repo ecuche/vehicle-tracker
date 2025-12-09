@@ -7,8 +7,8 @@ ob_start();
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="<?= $_ENV['APP_URL'] ?>/dashboard">Dashboard</a></li>
-            <li class="breadcrumb-item"><a href="<?= $_ENV['APP_URL'] ?>/search/vehicle-profile/<?=$vehicle['vin']; ?>">Vehicle Details</a></li>
+            <li class="breadcrumb-item"><a href="<?= url('dashboard') ?>">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="<?= url('vehicles/view/'.$vehicle['vin']) ?>">Vehicle Details</a></li>
             <li class="breadcrumb-item active" aria-current="page">Vehicle History</li>
         </ol>
     </nav>
@@ -32,10 +32,7 @@ ob_start();
                                 <button type="button" class="btn btn-outline-primary" onclick="window.print()">
                                     <i class="bi bi-printer me-1"></i> Print
                                 </button>
-                                <button type="button" class="btn btn-outline-success" onclick="exportHistory()">
-                                    <i class="bi bi-download me-1"></i> Export
-                                </button>
-                                <a href="<?= $_ENV['APP_URL'] ?>/vehicles/<?=$vehicle['id']; ?>" class="btn btn-outline-secondary">
+                                <a href="<?= url('vehicles/view/'.$vehicle['vin']) ?>" class="btn btn-outline-secondary">
                                     <i class="bi bi-arrow-left me-1"></i> Back
                                 </a>
                             </div>
@@ -104,10 +101,6 @@ ob_start();
                 <div class="card-body py-3">
                     <nav>
                         <div class="nav nav-pills nav-fill" id="historyTabs" role="tablist">
-                            <button class="nav-link active" id="timeline-tab" data-bs-toggle="tab" 
-                                    data-bs-target="#timeline" type="button" role="tab">
-                                <i class="bi bi-activity me-2"></i>Complete Timeline
-                            </button>
                             <button class="nav-link" id="ownership-tab" data-bs-toggle="tab" 
                                     data-bs-target="#ownership" type="button" role="tab">
                                 <i class="bi bi-people me-2"></i>Ownership History
@@ -135,76 +128,10 @@ ob_start();
     <div class="row">
         <div class="col-12">
             <div class="tab-content" id="historyTabContent">
-                <!-- Complete Timeline Tab -->
-                <div class="tab-pane fade show active" id="timeline" role="tabpanel">
-                    <div class="card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-activity me-2"></i>Complete Vehicle Timeline
-                            </h5>
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="showDetails" checked>
-                                <label class="form-check-label" for="showDetails">Show Details</label>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <?php if (!empty($timeline_events)): ?>
-                            <div class="timeline-vertical">
-                                <?php foreach ($timeline_events as $event): ?>
-                                <div class="timeline-item-vertical" data-event-type="<?=$event['type']; ?>">
-                                    <div class="timeline-marker-vertical bg-<?=getEventColor($event['type']); ?>">
-                                        <i class="<?=getEventIcon($event['type']); ?>"></i>
-                                    </div>
-                                    <div class="timeline-content-vertical">
-                                        <div class="timeline-header">
-                                            <h6 class="mb-1 text-capitalize">
-                                                <?=formatEventType($event['type']); ?>
-                                            </h6>
-                                            <small class="text-muted">
-                                                <?=date('F j, Y g:i A', strtotime($event['timestamp'])); ?>
-                                            </small>
-                                        </div>
-                                        <div class="timeline-body">
-                                            <p class="mb-1"><?=e($event['description']); ?></p>
-                                            <?php if (!empty($event['details'])): ?>
-                                            <div class="timeline-details mt-2">
-                                                <?php foreach ($event['details'] as $key => $value): ?>
-                                                <small class="text-muted">
-                                                    <strong><?=e(ucfirst(str_replace('_', ' ', $key))); ?>:</strong> 
-                                                    <?=e($value); ?>
-                                                </small><br>
-                                                <?php endforeach; ?>
-                                            </div>
-                                            <?php endif; ?>
-                                            <?php if (!empty($event['user'])): ?>
-                                            <div class="timeline-user mt-2">
-                                                <small class="text-muted">
-                                                    <i class="bi bi-person me-1"></i>
-                                                    By: <?=e($event['user']['name']); ?>
-                                                    <?php if ($event['user']['role']): ?>
-                                                    (<?=ucfirst($event['user']['role']); ?>)
-                                                    <?php endif; ?>
-                                                </small>
-                                            </div>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                </div>
-                                <?php endforeach; ?>
-                            </div>
-                            <?php else: ?>
-                            <div class="text-center py-5">
-                                <i class="bi bi-clock-history display-1 text-muted"></i>
-                                <h5 class="text-muted mt-3">No History Available</h5>
-                                <p class="text-muted">This vehicle doesn't have any recorded history yet.</p>
-                            </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
+               
 
                 <!-- Ownership History Tab -->
-                <div class="tab-pane fade" id="ownership" role="tabpanel">
+                <div class="tab-pane fade show active showDetails" id="ownership" role="tabpanel">
                     <div class="card">
                         <div class="card-header">
                             <h5 class="card-title mb-0">
@@ -220,7 +147,6 @@ ob_start();
                                             <th>Owner</th>
                                             <th>Contact</th>
                                             <th>Ownership Period</th>
-                                            <th>Transfer Type</th>
                                             <th>Status</th>
                                             <th>Actions</th>
                                         </tr>
@@ -234,22 +160,22 @@ ob_start();
                                                         <i class="bi bi-person"></i>
                                                     </div>
                                                     <div>
-                                                        <strong><?=e($history['owner_name']); ?></strong>
+                                                        <strong><?=e($history['name']); ?></strong>
                                                         <?php if ($history['is_current']): ?>
                                                         <span class="badge bg-success ms-1">Current</span>
                                                         <?php endif; ?>
                                                         <br>
-                                                        <small class="text-muted"><?=ucfirst($history['owner_role']); ?></small>
+                                                        <small class="text-muted"><?=ucfirst($history['role']); ?></small>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td>
                                                 <small>
-                                                    <?php if ($history['owner_email']): ?>
-                                                    <div><i class="bi bi-envelope me-1"></i><?=e($history['owner_email']); ?></div>
+                                                    <?php if ($history['email']): ?>
+                                                    <div><i class="bi bi-envelope me-1"></i><?=e($history['email']); ?></div>
                                                     <?php endif; ?>
-                                                    <?php if ($history['owner_phone']): ?>
-                                                    <div><i class="bi bi-phone me-1"></i><?=e($history['owner_phone']); ?></div>
+                                                    <?php if ($history['phone']): ?>
+                                                    <div><i class="bi bi-phone me-1"></i><?=e($history['phone']); ?></div>
                                                     <?php endif; ?>
                                                 </small>
                                             </td>
@@ -260,11 +186,6 @@ ob_start();
                                                         'to ' . date('M j, Y', strtotime($history['end_date'])) : 
                                                         'to Present'; ?>
                                                 </small>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-<?=$history['transfer_type'] === 'registration' ? 'success' : 'primary'; ?>">
-                                                    <?=ucfirst($history['transfer_type']); ?>
-                                                </span>
                                             </td>
                                             <td>
                                                 <span class="badge bg-<?=$history['status'] === 'completed' ? 'success' : 'secondary'; ?>">
@@ -323,26 +244,21 @@ ob_start();
                                             </div>
                                             <div class="mb-2">
                                                 <small class="text-muted">
-                                                    <strong>Assigned:</strong> <?=date('M j, Y', strtotime($plate['assigned_date'])); ?>
-                                                </small>
-                                            </div>
-                                            <div class="mb-2">
-                                                <small class="text-muted">
-                                                    <strong>By:</strong> <?=e($plate['assigned_by_name'] ?? 'System'); ?>
+                                                    <strong>Assigned:</strong> <?=date('M j, Y', strtotime($plate['assigned_at'])); ?>
                                                 </small>
                                             </div>
                                             <div class="mb-2">
                                                 <small class="text-muted">
                                                     <strong>Status:</strong> 
-                                                    <span class="badge bg-<?=$plate['is_active'] ? 'success' : 'secondary'; ?>">
-                                                        <?=$plate['is_active'] ? 'Active' : 'Inactive'; ?>
+                                                    <span class="badge bg-<?=$plate['is_current'] ? 'success' : 'secondary'; ?>">
+                                                        <?=$plate['is_current'] ? 'Active' : 'Inactive'; ?>
                                                     </span>
                                                 </small>
                                             </div>
-                                            <?php if ($plate['notes']): ?>
+                                            <?php if ($plate['note']): ?>
                                             <div class="mt-2">
                                                 <small class="text-muted">
-                                                    <strong>Notes:</strong> <?=e($plate['notes']); ?>
+                                                    <strong>Notes:</strong> <?=e($plate['note']); ?>
                                                 </small>
                                             </div>
                                             <?php endif; ?>
@@ -378,29 +294,26 @@ ob_start();
                                     <div class="timeline-marker-vertical bg-<?=getStatusColor($status['status']); ?>">
                                         <i class="bi bi-<?=getStatusIcon($status['status']); ?>"></i>
                                     </div>
-                                    <div class="timeline-content-vertical">
+                                    <div class="timeline-content-vertical bg-dark">
                                         <div class="timeline-header">
                                             <h6 class="mb-1">
                                                 Status Changed to 
-                                                <span class="badge bg-<?=getStatusColor($status['status']); ?>">
+                                                <span class="badge bg-<?=getStatusColor($status['status_reason']); ?>">
                                                     <?=formatStatus($status['status']); ?>
                                                 </span>
                                             </h6>
                                             <small class="text-muted">
-                                                <?=date('F j, Y g:i A', strtotime($status['changed_at'])); ?>
+                                                <?=date('F j, Y g:i A', strtotime($status['created_at'])); ?>
                                             </small>
                                         </div>
                                         <div class="timeline-body">
-                                            <?php if ($status['reason']): ?>
-                                            <p class="mb-2"><strong>Reason:</strong> <?=e($status['reason']); ?></p>
+                                            <?php if ($status['status_reason']): ?>
+                                            <p class="mb-2"><strong>Reason:</strong> <?=e($status['status_reason']); ?></p>
                                             <?php endif; ?>
                                             <div class="timeline-user">
                                                 <small class="text-muted">
                                                     <i class="bi bi-person me-1"></i>
                                                     Changed by: <?=e($status['changed_by_name'] ?? 'System'); ?>
-                                                    <?php if ($status['changed_by_role']): ?>
-                                                    (<?=ucfirst($status['changed_by_role']); ?>)
-                                                    <?php endif; ?>
                                                 </small>
                                             </div>
                                         </div>
@@ -441,7 +354,7 @@ ob_start();
                                             <th>Uploaded</th>
                                             <th>Uploaded By</th>
                                             <th>Size</th>
-                                            <th>Actions</th>
+                                            <th>View</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -451,7 +364,7 @@ ob_start();
                                                 <div class="d-flex align-items-center">
                                                     <i class="bi bi-file-earmark-text me-3 text-primary fs-4"></i>
                                                     <div>
-                                                        <strong><?=e($document['name']); ?></strong><br>
+                                                        <strong><?=e(ucwords($document['document_type'])); ?></strong><br>
                                                         <small class="text-muted"><?=e($document['description'] ?? 'No description'); ?></small>
                                                     </div>
                                                 </div>
@@ -464,19 +377,19 @@ ob_start();
                                                 <small class="text-muted"><?=date('g:i A', strtotime($document['created_at'])); ?></small>
                                             </td>
                                             <td>
-                                                <?=e($document['uploaded_by_name'] ?? 'System'); ?><br>
-                                                <small class="text-muted"><?=ucfirst($document['uploaded_by_role'] ?? 'System'); ?></small>
+                                                <?=e($document['name'] ?? 'System'); ?><br>
+                                                <small class="text-muted"><?=ucfirst($document['role'] ?? 'System'); ?></small>
                                             </td>
                                             <td>
                                                 <small class="text-muted"><?= htmlspecialchars("formatFileSize(document['file_size']); ") ?></small>
                                             </td>
                                             <td>
                                                 <div class="btn-group btn-group-sm">
-                                                    <a href="<?=e($document['url']); ?>" 
+                                                    <a href="<?=upload_path($document['file_path']); ?>" 
                                                        class="btn btn-outline-primary" target="_blank">
                                                         <i class="bi bi-eye"></i>
                                                     </a>
-                                                    <a href="<?=e($document['url']); ?>" 
+                                                    <a href="<?=upload_path($document['file_path']); ?>" 
                                                        class="btn btn-outline-success" download>
                                                         <i class="bi bi-download"></i>
                                                     </a>
@@ -620,7 +533,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function initializeVehicleHistory() {
     // Timeline details toggle
-    const showDetailsToggle = document.getElementById('showDetails');
+    const showDetailsToggle = document.getElementsByClassName('showDetails')[0];
     showDetailsToggle.addEventListener('change', function() {
         const details = document.querySelectorAll('.timeline-details');
         details.forEach(detail => {
@@ -635,109 +548,6 @@ function initializeVehicleHistory() {
 function setupTimelineFilters() {
     // This would set up filtering for different event types
     // Implementation depends on specific filtering requirements
-}
-
-function exportHistory() {
-    App.showToast('Preparing history export...', 'info');
-    
-    // Generate export URL with current tab and filters
-    const activeTab = document.querySelector('#historyTabs .nav-link.active').id.replace('-tab', '');
-    const exportUrl = `/vehicles/<?=$vehicle['id']; ?>/history/export?tab=${activeTab}`;
-    
-    window.location.href = exportUrl;
-}
-
-function viewTransferDetails(transferId) {
-    const modal = new bootstrap.Modal(document.getElementById('transferDetailsModal'));
-    const modalContent = document.getElementById('transferDetailsContent');
-    
-    // Show loading state
-    modalContent.innerHTML = `
-        <div class="text-center py-4">
-            <div class="spinner-border spinner-border-sm text-primary"></div>
-            <p class="text-muted mt-2">Loading transfer details...</p>
-        </div>
-    `;
-    
-    // Fetch transfer details
-    fetch(`/vehicles/transfers/${transferId}/details`)
-        .then(response => response.json())
-        .then(data => {
-            modalContent.innerHTML = `
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6>Transfer Information</h6>
-                        <table class="table table-sm">
-                            <tr>
-                                <td><strong>Transfer ID:</strong></td>
-                                <td>${data.id}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Type:</strong></td>
-                                <td><span class="badge bg-primary">${data.transfer_type}</span></td>
-                            </tr>
-                            <tr>
-                                <td><strong>Status:</strong></td>
-                                <td><span class="badge bg-success">${data.status}</span></td>
-                            </tr>
-                            <tr>
-                                <td><strong>Date:</strong></td>
-                                <td>${new Date(data.created_at).toLocaleString()}</td>
-                            </tr>
-                        </table>
-                    </div>
-                    <div class="col-md-6">
-                        <h6>Parties Involved</h6>
-                        <table class="table table-sm">
-                            <tr>
-                                <td><strong>From:</strong></td>
-                                <td>${data.from_user.name}<br><small>${data.from_user.email}</small></td>
-                            </tr>
-                            <tr>
-                                <td><strong>To:</strong></td>
-                                <td>${data.to_user.name}<br><small>${data.to_user.email}</small></td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-                ${data.amount ? `
-                <div class="row mt-3">
-                    <div class="col-12">
-                        <h6>Financial Details</h6>
-                        <table class="table table-sm">
-                            <tr>
-                                <td><strong>Amount:</strong></td>
-                                <td>₦${parseFloat(data.amount).toLocaleString()}</td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-                ` : ''}
-                ${data.notes ? `
-                <div class="row mt-3">
-                    <div class="col-12">
-                        <h6>Transfer Notes</h6>
-                        <div class="card bg-light">
-                            <div class="card-body">
-                                <p class="mb-0">${data.notes}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                ` : ''}
-            `;
-        })
-        .catch(error => {
-            console.error('Error loading transfer details:', error);
-            modalContent.innerHTML = `
-                <div class="alert alert-danger">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    Failed to load transfer details. Please try again.
-                </div>
-            `;
-        });
-    
-    modal.show();
 }
 
 // Search and filter functionality

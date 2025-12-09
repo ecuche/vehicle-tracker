@@ -661,47 +661,41 @@ function showDeleteConfirmation() {
 
 function deleteVehicle() {
     const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    var vin = $('#vin').val();
     
     // Disable button and show loading
     confirmDeleteBtn.disabled = true;
     confirmDeleteBtn.innerHTML = '<div class="spinner-border spinner-border-sm me-1"></div> Deleting...';
 
-    fetch(`/admin/vehicles/<?= $vehicle['id']; ?>/delete`, {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
+     $.ajax({
+        type: "POST",
+        url: appUrl + '/api/admin/delete/vehicle',
+        data: {
+            vin: vin,
+        },
+        success: function (response) {
+            const data = JSON.parse(response);
+            if (data.success) {
+                App.showToast('Vehicle deleted successfully!', 'success');
+                // Close modal and redirect
+                bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+                setTimeout(() => {
+                    window.location.href = appUrl + '/admin/vehicles';
+                }, 1500);
+            } else {
+                App.showToast(data.error, 'error');
+            }
+        },
+        error: function(error){
+            console.error('Update error:', error);
+            App.showToast(error.message, 'error');
+            // Re-enable button
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Delete Vehicle';
         }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            App.showToast('Vehicle deleted successfully!', 'success');
-            
-            // Close modal and redirect
-            bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
-            setTimeout(() => {
-                window.location.href = '/admin/vehicles';
-            }, 1500);
-        } else {
-            throw new Error(data.error || 'Delete failed');
-        }
-    })
-    .catch(error => {
-        console.error('Delete error:', error);
-        App.showToast(error.message, 'error');
-        
-        // Re-enable button
-        confirmDeleteBtn.disabled = false;
-        confirmDeleteBtn.innerHTML = '<i class="bi bi-trash me-1"></i> Delete Vehicle';
     });
 }
-
-function viewVehicleHistory() {
-    window.open(`/search/vehicle/<?= $vehicle['id']; ?>`, '_blank');
-}
-
 </script>
-
 <?php
 $scripts = ob_get_clean();
 include 'app/Views/layouts/main.php';

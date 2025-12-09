@@ -35,29 +35,18 @@ class DashboardController extends Controller {
     }
 
     private function driverDashboard($user_id) {
-        // Get driver's current vehicles
         $vehicles = $this->vehicle->getUserVehicles($user_id, true);
-        
-        // Get pending transfer requests
         $pending_transfers = $this->transfer->getPendingTransfers($user_id);
-        
-        // Get recent transfers
-        $recent_transfers = $this->transfer->getUserTransfers($user_id, 5);
-        $incoming_requests = $this->transfer->getIncomingCount($user_id);
-        $failed_sales = $this->transfer->getFailedCount($user_id);
-        $sold_vehicles = $this->transfer->getSoldCount($user_id);
-        
         $data = [
             'vehicles' => $vehicles,
             'pending_transfers' => $pending_transfers,
-            'recent_transfers' => $recent_transfers,
+            'recent_transfers' => $this->transfer->getUserTransfers($user_id, 5),
             'total_vehicles' => count($vehicles),
             'pending_requests' => count($pending_transfers),
-            'incoming_requests' => $incoming_requests,
-            'failed_sales' => $failed_sales,
-            'sold_vehicles' => $sold_vehicles
+            'incoming_requests' => $this->transfer->getIncomingCount($user_id),
+            'failed_sales' => $this->transfer->getFailedCount($user_id),
+            'sold_vehicles' => $this->transfer->getSoldCount($user_id)
         ];
-        require_once 'app/Views/dashboard/driver.php';
         $this->view('dashboard/driver', $data);
     }
 
@@ -70,10 +59,14 @@ class DashboardController extends Controller {
         $failed_sales = $this->transfer->getFailedCount($user_id);
         $sold_vehicles = $this->transfer->getSoldCount($user_id);
         $data = [
-            'recent_searches' => $recent_searches
+            'recent_searches' => $recent_searches,
+            'total_vehicles' => $total_vehicles,
+            'pending_requests' => $pending_requests,
+            'incoming_requests' => $incoming_requests,
+            'failed_sales' => $failed_sales,
+            'sold_vehicles' => $sold_vehicles,
         ];
-        extract($data);
-        require_once 'app/Views/dashboard/searcher.php';
+        $this->view('dashboard/searcher', $data);
     }
 
     private function adminDashboard() {
