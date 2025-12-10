@@ -32,5 +32,13 @@ class Request {
     public function file($name, $default = null) {
         return isset($_FILES[$name]) ? trim($_FILES[$name]) : $default;
     }
+
+    public function redirect(string $url, array $data = []): void  
+    {
+        $params = empty($data) ? '' : '/?' .http_build_query($data);
+        header("Location: {$_ENV['APP_URL']}/{$url}".$params);
+        exit;
+    }
+
 }
 ?>

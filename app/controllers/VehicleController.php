@@ -1,9 +1,12 @@
 <?php
 namespace App\Controllers;
 use App\Core\Controller;
+use App\Core\Auth;
 
 
 class VehicleController extends Controller {
+
+    protected $auth;
 
     public function __construct() {
         parent::__construct();
@@ -11,6 +14,7 @@ class VehicleController extends Controller {
             $this->redirect('login');
             exit;
         }
+        $this->auth = new Auth();   
     }
 
     public function register() {
@@ -66,9 +70,20 @@ class VehicleController extends Controller {
                     if ($this->vehicle->create($data, $vehicle_images, $vehicle_documents)) {
                         $vehicle = $this->vehicle->find(['vin'=>$data['vin']]);
                         $status = $this->vehicleStatusHistory->insertAndGet(['vehicle_id' => $vehicle['id']]);
-                        $plate = $this->plateNumber->insertAndGet(['vehicle_id' => $vehicle['id'], 'plate_number' => $data['plate_number']]);
-                        $transfer = $this->transfer->insertAndGet(['vehicle_id'=> $vehicle['id'], 'buyer_id' => $user_id, 'status'=>'registration' ]);
-                        $this->vehicle->updateById(['current_status' => $status['status'], 'current_status_id' => $status['id'], 'current_plate' => $plate['plate_number'], 'current_plate_id' => $plate['id']], $vehicle['id']);
+                        $plate = $this->plateNumber->insertAndGet([
+                            'vehicle_id' => $vehicle['id'], 
+                            'plate_number' => $data['plate_number']]);
+                        $transfer = $this->transfer->insertAndGet([
+                            'vehicle_id'=> $vehicle['id'], 
+                            'buyer_id' => $user_id, 
+                            'status'=>'registration' ]);
+                        $this->vehicle->updateById([
+                            'current_status' => $status['status'], 
+                            'current_status_id' => $status['id'], 
+                            'current_plate' => $plate['plate_number'], 
+                            'current_plate_id' => $plate['id'],
+                            'transfer_id' => $transfer['id'],
+                        ], $vehicle['id']);
                         $this->session->setFlash('success', 'Vehicle registered successfully');
                         $this->redirect('vehicles');
                         exit;
@@ -228,10 +243,10 @@ class VehicleController extends Controller {
             echo json_encode(['error' => 'Vehicle Validation failed']);
             exit;
         }
-        $this->vehicle->updateById(['user_id'=> $buyer['id']], $vehicle['id']);
-        $this->transfer->updateLast(['end_date' => 'NOW()']);
+        $this->vehicle->updateById(['user_id'=> $buyer['id'], ], $vehicle['id']);
+        $this->transfer->updateLast(['end_date' => date('Y-m-d H:i:s')], ['vehicle_id' => $vehicle['id']]);
         $this->transfer->update(['is_current' => 0], ['vehicle_id' => $vehicle['id']]);
-        $this->transfer->insertAndGet([
+        $transfer = $this->transfer->insertAndGet([
             'vehicle_id' => $vehicle['id'],
             'seller_id' => $seller['id'],
             'buyer_id' => $buyer['id'],
@@ -239,6 +254,10 @@ class VehicleController extends Controller {
             'transfer_amount' => $post['transfer_amount'] ?? '',
             'transfer_note'=> $post['transfer_note'] ?? '',
         ]);
+        $this->vehicle->updateById([
+            'transfer_status'=> 'pending',
+            'transfer_id'=> $transfer['id']
+        ], $vehicle['id']);
         echo json_encode(['success' => true ]);
         exit;
     }
@@ -384,6 +403,99 @@ class VehicleController extends Controller {
 
     public function viewStatusHistory($vin) {
         $this->viewOwnershipHistory($vin);  
+    }
+
+    public function completedTransfers(){
+        $this->auth->requireAuth();
+        $start_date = $this->request->get('start_date') ?? null;
+        $end_date = $this->request->get('end_date') ?? null;
+        $per_page = $this->request->get('per_page') ?? 10;
+        $current_page = $this->request->get('page') ?? 1;
+        $offset = ($current_page -1) * $per_page;
+        if(isset($start_date) && isset($end_date)){
+            $vehicles = $this->transfer->getCompletedTransfersByDate($start_date, $end_date);
+        }else{
+            $vehicles = $this->transfer->getCompletedTransfersPagination($offset, $per_page);
+        }
+        $total_items = $this->transfer->countCompletedTransfers();
+        $total_pages = ceil($total_items / $per_page);
+
+        $data = [
+            'per_page' => $per_page,
+            'current_page' => $current_page,
+            'vehicles' => $vehicles,
+            'total_pages'=> $total_pages,
+            'total_items'=> $total_items,
+            'stats' => $this->transfer->stats(),
+        ];
+
+        $this->view('vehicle/completed-transfers', $data);
+
+    }
+
+    public function incomingTransfers(){
+        $this->auth->requireAuth();
+        $per_page = $this->request->get('per_page') ?? 10;
+        $current_page = $this->request->get('page') ?? 1;
+        $offset = ($current_page -1) * $per_page;
+        $vehicles = $this->transfer->getIncomingTransfersPagination($offset, $per_page);
+        $total_items = $this->transfer->countIncomingTransfers();
+        $total_pages = ceil($total_items / $per_page);
+
+        $data = [
+            'per_page' => $per_page,
+            'current_page' => $current_page,
+            'vehicles' => $vehicles,
+            'total_pages'=> $total_pages,
+            'total_items'=> $total_items,
+            'stats' => $this->transfer->stats(),
+        ];
+
+        $this->view('vehicle/incoming-transfers', $data);
+
+    }
+
+    public function outgoingTransfers(){
+        $this->auth->requireAuth();
+        $per_page = $this->request->get('per_page') ?? 10;
+        $current_page = $this->request->get('page') ?? 1;
+        $offset = ($current_page -1) * $per_page;
+        $vehicles = $this->transfer->getOutgoingTransfersPagination($offset, $per_page);
+        $total_items = $this->transfer->countOutgoingTransfers();
+        $total_pages = ceil($total_items / $per_page);
+
+        $data = [
+            'per_page' => $per_page,
+            'current_page' => $current_page,
+            'vehicles' => $vehicles,
+            'total_pages'=> $total_pages,
+            'total_items'=> $total_items,
+            'stats' => $this->transfer->stats(),
+        ];
+
+        $this->view('vehicle/outgoing-transfers', $data);
+    }
+
+    public function pendingTransfers($vin){
+        $this->auth->requireAuth();
+        $vehicle = $this->vehicle->find(['vin'=>$vin, 'transfer_status'=> 'pending']);
+        if(!$vehicle){
+            $this->session->setFlash('error', 'Vehicle not found');
+            $this->redirect('dashboeard');
+        }
+        $model = $this->vehicleModel->findById($vehicle['vehicle_model_id']);
+        $transfer = $this->transfer->findLast(['vehicle_id'=>$vehicle['id'], 'status'=>'pending']);
+        $seller = $this->user->findById($transfer['seller_id']);
+        $status = $this->vehicleStatusHistory->findById($vehicle['current_status_id']);
+        $data = [
+            'vehicle'=> $vehicle,
+            'transfer'=> $transfer,
+            'model' => $model,
+            'seller' => $seller,
+            'status'=> $status,
+
+        ];
+        $this->view('vehicle/pending-transfers', $data);
     }
 }
 ?>

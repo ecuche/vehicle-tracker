@@ -76,8 +76,8 @@ class Vehicle extends Model {
         $stmt = $this->db->prepare("
             SELECT v.*, vm.make, vm.model, pn.plate_number as current_plate_number
             FROM vehicles v
-            LEFT JOIN vehicle_models vm ON v.vehicle_model_id = vm.id
-            LEFT JOIN plate_numbers pn ON v.id = pn.vehicle_id AND pn.is_current = 1
+            JOIN vehicle_models vm ON v.vehicle_model_id = vm.id
+            JOIN plate_numbers pn ON v.id = pn.vehicle_id AND pn.is_current = 1
             WHERE v.vin = ? AND v.deleted_at IS NULL
         ");
         $stmt->execute([$vin]);
@@ -93,7 +93,7 @@ class Vehicle extends Model {
             WHERE v.id = ? AND v.deleted_at IS NULL
         ");
         $stmt->execute([$id]);
-        return $stmt->fetch();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     public function findByPlateNumber($plate_number) {
@@ -105,7 +105,7 @@ class Vehicle extends Model {
             WHERE pn.plate_number = ? AND v.deleted_at IS NULL AND pn.deleted_at IS NULL
         ");
         $stmt->execute([$plate_number]);
-        return $stmt->fetch();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     public function getUserVehicles($user_id, $current_only = true) {
@@ -152,13 +152,13 @@ class Vehicle extends Model {
             LEFT JOIN plate_numbers pn ON v.id = pn.vehicle_id AND pn.is_current = 1
             LEFT JOIN vehicle_images vi ON v.id = vi.vehicle_id AND vi.deleted_at IS NULL
             LEFT JOIN vehicle_documents vd ON v.id = vd.vehicle_id AND vd.deleted_at IS NULL
-            WHERE v.user_id = ? AND v.deleted_at IS NULL
+            WHERE v.user_id = ? AND v.transfer_status = 'completed' AND v.deleted_at IS NULL
             GROUP BY v.id 
             ORDER BY v.created_at DESC 
             LIMIT ? OFFSET ?
         ");
         $stmt->execute([$user_id, $per_page, $offset]);
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getUserVehicleCount($user_id) {
@@ -318,6 +318,20 @@ class Vehicle extends Model {
         return $details;
     }
 
+    public function getVehicleHistoryAndOwners($vehicle_id) {
+        $vehicle_stmt = $this->db->prepare("
+            SELECT 
+                ot.*,
+                u.*
+            FROM ownership_transfers ot
+            JOIN users u ON ot.buyer_id = u.id
+            WHERE ot.vehicle_id = ? AND ot.deleted_at IS NULL 
+            ORDER BY ot.id DESC
+        ");
+        $vehicle_stmt->execute([$vehicle_id]);
+        return $vehicle_stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function updateStatus($vehicle_id, $status) {
         $this->db->beginTransaction();
 
@@ -381,7 +395,7 @@ class Vehicle extends Model {
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getVehiclesCount($search = '', $status = '') {
@@ -474,7 +488,7 @@ class Vehicle extends Model {
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function advancedSearchCount($filters) {
@@ -550,7 +564,7 @@ class Vehicle extends Model {
             LIMIT ? OFFSET ?
         ");
         $stmt->execute([$user_id, $per_page, $offset]);
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getSearchHistoryCount($user_id) {
@@ -572,7 +586,7 @@ class Vehicle extends Model {
             LIMIT ?
         ");
         $stmt->execute([$user_id, $limit]);
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getTotalCount() {
@@ -619,7 +633,7 @@ class Vehicle extends Model {
             GROUP BY current_status
         ");
         $stmt->execute();
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getMonthlyRegistrations() {
@@ -634,7 +648,7 @@ class Vehicle extends Model {
             ORDER BY month
         ");
         $stmt->execute();
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getVehicleHistory($vehicle_id) {
@@ -775,10 +789,5 @@ class Vehicle extends Model {
         $stmt->execute([$vehicle_id, $per_page, $offset]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-
-    public function getVehicleMakes(){
-        
-    }
-
 }
 ?>

@@ -98,7 +98,7 @@ a {
 
 a:hover {
   color: #0a58ca;
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 /* ===== Layout ===== */
@@ -871,4 +871,57 @@ button:focus,
 .text-bg-dark {
     color: #fff !important;
     background-color: #212529 !important; /* Bootstrap $dark color */
+}
+
+.timeline {
+    position: relative;
+    padding-left: 20px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #e3e6f0;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -25px;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 3px #e3e6f0;
+}
+
+.timeline-content {
+    padding-left: 10px;
+}
+
+.breadcrumb {
+    padding: 0.75rem 1rem;
+    border-radius: 0.375rem;
+}
+
+.breadcrumb-item a {
+    color: #0d6efd;
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    text-decoration: underline;
+}
+
+.breadcrumb-item.active {
+    color: #6c757d;
 }

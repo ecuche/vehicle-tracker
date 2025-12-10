@@ -5,28 +5,36 @@ ob_start();
 <!-- Stats Overview -->
 <div class="row mb-4">
     <div class="col-md-3">
-        <div class="card stats-card">
-            <div class="stats-number"><?= $total_vehicles; ?></div>
-            <div class="stats-label">Total Vehicles</div>
-        </div>
+        <a href="<?= url('vehicles') ?>">
+            <div class="card stats-card">
+                <div class="stats-number"><?= $total_vehicles; ?></div>
+                <div class="stats-label">Total Vehicles</div>
+            </div>
+        </a>
     </div>
     <div class="col-md-3">
-        <div class="card stats-card">
-            <div class="stats-number"><?= $pending_requests; ?></div>
-            <div class="stats-label">Pending Transfers</div>
-        </div>
+        <a href="<?= url('vehicles/outgoing-transfers') ?>">
+            <div class="card stats-card">
+                <div class="stats-number"><?= $pending_requests; ?></div>
+                <div class="stats-label">Outgoing Transfers</div>
+            </div>
+        </a>
     </div>
     <div class="col-md-3">
-        <div class="card stats-card">
-            <div class="stats-number"><?= $incoming_requests; ?></div>
-            <div class="stats-label">Incoming Transfers</div>
-        </div>
+        <a href="<?= url('vehicles/incoming-transfers') ?>">
+            <div class="card stats-card">
+                <div class="stats-number"><?= $incoming_requests; ?></div>
+                <div class="stats-label">Incoming Transfers</div>
+            </div>
+        </a>
     </div>
     <div class="col-md-3">
-        <div class="card stats-card">
-            <div class="stats-number"><?= $sold_vehicles; ?></div>
-            <div class="stats-label">Sold Vehicles</div>
-        </div>
+        <a href="<?= url('vehicles/completed-transfers') ?>">
+            <div class="card stats-card">
+                <div class="stats-number"><?= $sold_vehicles; ?></div>
+                <div class="stats-label">Sold Vehicles</div>
+            </div>
+        </a>
     </div>
 </div>
 

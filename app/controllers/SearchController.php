@@ -22,7 +22,11 @@ class SearchController extends Controller {
             $this->redirect('dashboard');
             exit;
         }
-        $this->view('search/index');
+        $data = [
+            'search_history' => $this->searchHistory->userSearchHistoryPagination(),
+            'search_count' => $this->searchHistory->userSearchCount(),
+        ];
+        $this->view('search/index', $data);
     }
 
     public function searchVehicle() {
@@ -42,19 +46,13 @@ class SearchController extends Controller {
             exit;
         }
 
-        $vehicle = null;
-        
         if ($search_type === 'vin') {
             $vehicle = $this->vehicle->findByVIN($search_term);
         } elseif ($search_type === 'plate') {
             $vehicle = $this->vehicle->findByPlateNumber($search_term);
         }
-        
         if ($vehicle) {
-            // Get full vehicle details including ownership history and plate history
             $vehicle_details = $this->vehicle->getFullDetails($vehicle['id']);
-            
-            // Log the search for audit purposes
             if ($user_role === 'searcher') {
                 $this->vehicle->logSearch($this->auth->getUserId(), $search_type, $search_term, $vehicle['id']);
             }
@@ -67,64 +65,37 @@ class SearchController extends Controller {
         exit;
     }
 
-    public function searchVehicleAdvanced() {
-        $user_role = $this->auth->getUserRole();
-        
-        if (!in_array($user_role, ['searcher', 'admin'])) {
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'Access denied']);
-            exit;
-        }
-
-        $filters = [
-            'vin' => $_GET['vin'] ?? '',
-            'plate_number' => $_GET['plate_number'] ?? '',
-            'make' => $_GET['make'] ?? '',
-            'model' => $_GET['model'] ?? '',
-            'year' => $_GET['year'] ?? '',
-            'status' => $_GET['status'] ?? '',
-            'owner_identifier' => $_GET['owner_identifier'] ?? ''
-        ];
-
-        $page = $_GET['page'] ?? 1;
-        $per_page = $_GET['per_page'] ?? 10;
-
-        $vehicles = $this->vehicle->advancedSearch($filters, $page, $per_page);
-        $total_vehicles = $this->vehicle->advancedSearchCount($filters);
-        
-        $response = [
-            'vehicles' => $vehicles,
-            'pagination' => [
-                'page' => $page,
-                'per_page' => $per_page,
-                'total' => $total_vehicles,
-                'total_pages' => ceil($total_vehicles / $per_page)
-            ]
-        ];
-        
-        header('Content-Type: application/json');
-        echo json_encode($response);
-        exit;
-    }
-
     public function getVehicleProfile($vin) {
         $user_role = $this->auth->getUserRole();
         
         if (!in_array($user_role, ['searcher', 'admin'])) {
             $this->session->setFlash('error', 'Access denied');
-            header('Location: '.$_ENV['APP_URL'].'/dashboard');
+            $this->redirect('dashboard');
             exit;
         }
-        $vehicle = $this->vehicle->findByVIN($vin);   
-        $vehicle = $this->vehicle->getFullProfile($vehicle['id']);
+        $vehicle = $this->vehicle->findByVIN($vin);
+        $user = $this->user->findById($vehicle['user_id']);  
+        $owners = $this->transfer->getVehicleHistoryAndOwners($vehicle['id']); 
+        $plates = $this->plateNumber->findAll(['vehicle_id'=>$vehicle['id']]);
+        $statuses = $this->vehicleStatusHistory->findAll(['vehicle_id'=>$vehicle['id']]);
+        $documents = $this->vehicle->findAll(['vehicle_id'=>$vehicle['id']], 'vehicle_documents');
+        $images = $this->vehicle->findAll(['vehicle_id'=>$vehicle['id']], 'vehicle_images');
+       
         if (!$vehicle) {
             $this->session->setFlash('error', 'Vehicle not found');
-            header('Location: '.$_ENV['APP_URL'].'/search');
+            $this->redirect('search');
             exit;
         }
-        extract($vehicle);
-       
-        require_once 'app/Views/search/vehicle_profile.php';
+        $data = [
+            'vehicle' => $vehicle,
+            'user' => $user,
+            'owners' => $owners,
+            'plates'=> $plates,
+            'statuses'=> $statuses,
+            'documents'=> $documents,
+            'images'=> $images
+        ];
+        $this->view('search/vehicle_profile', $data);
     }
 
     public function getSearchHistory() {

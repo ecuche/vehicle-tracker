@@ -7,8 +7,8 @@ ob_start();
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="<?= $_ENV['APP_URL'] ?>/dashboard">Dashboard</a></li>
-            <li class="breadcrumb-item"><a href="<?= $_ENV['APP_URL'] ?>/search">Vehicle Search</a></li>
+            <li class="breadcrumb-item"><a href="<?= url('dashboard') ?>">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="<?= url('search') ?>">Vehicle Search</a></li>
             <li class="breadcrumb-item active" aria-current="page">Vehicle Profile</li>
         </ol>
     </nav>
@@ -114,23 +114,23 @@ ob_start();
                     </h5>
                 </div>
                 <div class="card-body">
-                    <?php if (isset($current_owner) && $current_owner): ?>
+                    <?php if (isset($user) && $user): ?>
                     <div class="row">
                         <div class="col-sm-6 mb-3">
                             <strong>Name:</strong><br>
-                            <?= e($current_owner['name'] ?? 'N/A'); ?>
+                            <?= e($user['name'] ?? 'N/A'); ?>
                         </div>
                         <div class="col-sm-6 mb-3">
                             <strong>Role:</strong><br>
-                            <span class="badge bg-info"><?= ucfirst($current_owner['role'] ?? 'N/A'); ?></span>
+                            <span class="badge bg-info"><?= ucfirst($user['role'] ?? 'N/A'); ?></span>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-sm-6 mb-3">
                             <strong>Email:</strong><br>
-                            <?php if (isset($current_owner['email'])): ?>
-                                <a href="mailto:<?= e($current_owner['email']); ?>">
-                                    <?= e($current_owner['email']); ?>
+                            <?php if (isset($user['email'])): ?>
+                                <a href="mailto:<?= e($user['email']); ?>">
+                                    <?= e($user['email']); ?>
                                 </a>
                             <?php else: ?>
                                 N/A
@@ -138,9 +138,9 @@ ob_start();
                         </div>
                         <div class="col-sm-6 mb-3">
                             <strong>Phone:</strong><br>
-                            <?php if (isset($current_owner['phone'])): ?>
-                                <a href="tel:<?= e($current_owner['phone']); ?>">
-                                    <?= e($current_owner['phone']); ?>
+                            <?php if (isset($user['phone'])): ?>
+                                <a href="tel:<?= e($user['phone']); ?>">
+                                    <?= e($user['phone']); ?>
                                 </a>
                             <?php else: ?>
                                 N/A
@@ -150,7 +150,7 @@ ob_start();
                     <div class="row">
                         <div class="col-sm-6 mb-3">
                             <strong>NIN:</strong><br>
-                            <?= e($current_owner['nin'] ?? 'N/A'); ?>
+                            <?= e($user['nin'] ?? 'N/A'); ?>
                         </div>
                         <div class="col-sm-6 mb-3">
                             <strong>Ownership Since:</strong><br>
@@ -181,8 +181,8 @@ ob_start();
                     <div class="row">
                         <?php foreach ($images as $image): ?>
                         <div class="col-6 col-md-4 mb-3">
-                            <a href="<?= $_ENV['APP_URL'].'/'.$_ENV['UPLOAD_PATH'].'/'.e($image['image_path']); ?>" data-lightbox="vehicle-images">
-                                <img src="<?= $_ENV['APP_URL'].'/'.$_ENV['UPLOAD_PATH'].'/'.e($image['image_path']); ?>" class="img-thumbnail w-100" 
+                            <a href="<?= upload_path(e($image['image_path'])); ?>" data-lightbox="vehicle-images">
+                                <img src="<?= upload_path(e($image['image_path'])); ?>" class="img-thumbnail w-100" 
                                      alt="Vehicle image" style="height: 100px; object-fit: cover;">
                             </a>
                         </div>
@@ -214,7 +214,7 @@ ob_start();
                                     <i class="bi bi-file-earmark-text me-2"></i>
                                     <span><?= e($document['document_type']); ?></span>
                                 </div>
-                                <a href="<?= $_ENV['APP_URL'].'/'.$_ENV['UPLOAD_PATH'].'/'.e($document['file_path']); ?>" class="btn btn-sm btn-outline-primary" download>
+                                <a href="<?= upload_path(e($document['file_path'])); ?>" class="btn btn-sm btn-outline-primary" download>
                                     <i class="bi bi-download"></i>
                                 </a>
                             </div>
@@ -242,7 +242,7 @@ ob_start();
                     </h5>
                 </div>
                 <div class="card-body">
-                    <?php if (isset($ownership_history) && !empty($ownership_history)): ?>
+                    <?php if (isset($owners) && !empty($owners)): ?>
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead>
@@ -255,19 +255,19 @@ ob_start();
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($ownership_history as $history): ?>
+                                <?php foreach ($owners as $history): ?>
                                 <tr>
                                     <td>
-                                        <strong><?= e($history['owner_name']); ?></strong><br>
-                                        <small class="text-muted"><?= ucfirst($history['owner_role']); ?></small>
+                                        <strong><?= ($history['name']); ?></strong><br>
+                                        <small class="text-muted"><?= ucfirst($history['role']); ?></small>
                                     </td>
                                     <td>
                                         <small>
-                                            <?php if ($history['owner_email']): ?>
-                                            <div><?= e($history['owner_email']); ?></div>
+                                            <?php if ($history['email']): ?>
+                                            <div><?= e($history['email']); ?></div>
                                             <?php endif; ?>
-                                            <?php if ($history['owner_phone']): ?>
-                                            <div><?= e($history['owner_phone']); ?></div>
+                                            <?php if ($history['phone']): ?>
+                                            <div><?= e($history['phone']); ?></div>
                                             <?php endif; ?>
                                         </small>
                                     </td>
@@ -315,7 +315,7 @@ ob_start();
                     </h5>
                 </div>
                 <div class="card-body">
-                    <?php if (isset($plate_history) && !empty($plate_history)): ?>
+                    <?php if (isset($plates) && !empty($plates)): ?>
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead>
@@ -327,7 +327,7 @@ ob_start();
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($plate_history as $plate): ?>
+                                <?php foreach ($plates as $plate): ?>
                                 <tr class="<?= $plate['is_current'] ? 'table-active' : ''; ?>">
                                     <td>
                                         <strong><?= e($plate['plate_number']); ?></strong>
@@ -373,9 +373,9 @@ ob_start();
                     </h5>
                 </div>
                 <div class="card-body">
-                    <?php if (isset($status_history) && !empty($status_history)): ?>
+                    <?php if (isset($statuses) && !empty($statuses)): ?>
                     <div class="timeline">
-                        <?php foreach ($status_history as $status): ?>
+                        <?php foreach ($statuses as $status): ?>
                         <div class="timeline-item">
                             <div class="timeline-marker"></div>
                             <div class="timeline-content">
@@ -392,7 +392,7 @@ ob_start();
                                         echo $statusLabels[$status['status']] ?? ucfirst($status['status']);
                                         ?>
                                     </h6>
-                                    <small class="text-muted"><?= date('M j, Y g:i A', strtotime($status['changed_at'])); ?></small>
+                                    <small class="text-muted"><?= date('M j, Y g:i A', strtotime($status['created_at'])); ?></small>
                                 </div>
                                 <p class="mb-1 small text-muted">
                                     Changed by: <?= e($status['changed_by_name'] ?? 'System'); ?>
@@ -400,8 +400,8 @@ ob_start();
                                     (<?= ucfirst($status['changed_by_role']); ?>)
                                     <?php endif; ?>
                                 </p>
-                                <?php if ($status['reason']): ?>
-                                <p class="mb-0 small">Reason: <?= e($status['reason']); ?></p>
+                                <?php if ($status['status_reason']): ?>
+                                <p class="mb-0 small">Reason: <?= e($status['status_reason']); ?></p>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -418,49 +418,7 @@ ob_start();
         </div>
     </div>
 
-    <!-- Audit Trail -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-clipboard-data me-2"></i>Recent Activity
-                    </h5>
-                    <small class="text-muted">Last 10 activities</small>
-                </div>
-                <div class="card-body">
-                    <?php if (isset($vehicle['recent_activity']) && !empty($vehicle['recent_activity'])): ?>
-                    <div class="list-group list-group-flush">
-                        <?php foreach ($vehicle['recent_activity'] as $activity): ?>
-                        <div class="list-group-item px-0">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1 small text-capitalize">
-                                    <?= str_replace('_', ' ', $activity['action']); ?>
-                                </h6>
-                                <small class="text-muted"><?= date('M j, Y g:i A', strtotime($activity['created_at'])); ?></small>
-                            </div>
-                            <p class="mb-1 small text-muted">
-                                By: <?= e($activity['user_name'] ?? 'System'); ?>
-                                <?php if (isset($activity['user_role'])): ?>
-                                (<?= ucfirst($activity['user_role']); ?>)
-                                <?php endif; ?>
-                            </p>
-                            <?php if ($activity['description']): ?>
-                            <p class="mb-0 small"><?= e($activity['description']); ?></p>
-                            <?php endif; ?>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-                    <?php else: ?>
-                    <div class="text-center py-3">
-                        <i class="bi bi-clipboard-data display-1 text-muted"></i>
-                        <p class="text-muted mt-2">No recent activity found</p>
-                    </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-    </div>
+    
 </div>
 <?php $content = ob_get_clean(); ?>
 <?php ob_start(); ?>

@@ -165,8 +165,8 @@ class AjaxHandler {
      * Show error message to user
      */
     showError(message, title = 'Error') {
-        if (typeof VehicleTrackerApp !== 'undefined') {
-            VehicleTrackerApp.showToast(message, 'danger');
+        if (typeof App !== 'undefined') {
+            App.showToast(message, 'danger');
         } else {
             // Fallback to alert
             alert(`${title}: ${message}`);
@@ -177,8 +177,8 @@ class AjaxHandler {
      * Show success message
      */
     showSuccess(message, title = 'Success') {
-        if (typeof VehicleTrackerApp !== 'undefined') {
-            VehicleTrackerApp.showToast(message, 'success');
+        if (typeof App !== 'undefined') {
+            App.showToast(message, 'success');
         } else {
             alert(`${title}: ${message}`);
         }

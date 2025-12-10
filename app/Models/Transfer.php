@@ -31,7 +31,7 @@ class Transfer extends Model{
             WHERE ot.id = ? AND ot.deleted_at IS NULL
         ");
         $stmt->execute([$id]);
-        return $stmt->fetch();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     public function getPendingTransfers($user_id) {
@@ -199,7 +199,7 @@ class Transfer extends Model{
             ORDER BY month
         ");
         $stmt->execute();
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getTransferHistory($vehicle_id) {
@@ -217,7 +217,7 @@ class Transfer extends Model{
             ORDER BY ot.created_at DESC
         ");
         $stmt->execute([$vehicle_id]);
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getUserVehicleHistoryPagination($user_id, $offset = 0, $limit =10) {
@@ -234,7 +234,186 @@ class Transfer extends Model{
             LIMIT ? OFFSET ?
         ");
         $stmt->execute([$user_id, $limit, $offset]);
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+     public function getVehicleHistoryAndOwners(int $vehicle_id) {
+        $vehicle_stmt = $this->db->prepare("
+            SELECT 
+                ot.*,
+                u.*
+            FROM ownership_transfers ot
+            JOIN users u ON ot.buyer_id = u.id
+            WHERE ot.vehicle_id = ? AND ot.deleted_at IS NULL 
+            ORDER BY ot.id DESC
+        ");
+        $vehicle_stmt->execute([$vehicle_id]);
+        return $vehicle_stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getIncomingTransfersPagination($offset = 0, $limit = 10, $user_id = null) {
+        $user_id ??= $_SESSION['user_id'];
+        $stmt = $this->db->prepare("
+             SELECT 
+                ot.*,
+                u.*,
+                v.*,
+                m.*,
+                pn.*
+            FROM ownership_transfers ot
+            JOIN users u ON ot.seller_id = u.id
+            JOIN vehicles v ON ot.vehicle_id = v.id
+            JOIN vehicle_models m ON v.vehicle_model_id = m.id
+            JOIN plate_numbers pn ON v.current_plate_id = pn.id
+            WHERE ot.buyer_id = ? AND status = 'pending' AND ot.deleted_at IS NULL 
+            ORDER BY ot.id DESC
+            LIMIT ? OFFSET ?
+        ");
+        $stmt->execute([$user_id, $limit, $offset]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getOutgoingTransfersPagination($offset = 0, $limit = 10, $user_id = null) {
+        $user_id ??= $_SESSION['user_id'];
+        $stmt = $this->db->prepare("
+             SELECT 
+                ot.*,
+                u.*,
+                v.*,
+                m.*,
+                pn.*
+            FROM ownership_transfers ot
+            JOIN users u ON ot.seller_id = u.id
+            JOIN vehicles v ON ot.vehicle_id = v.id
+            JOIN vehicle_models m ON v.vehicle_model_id = m.id
+            JOIN plate_numbers pn ON v.current_plate_id = pn.id
+            WHERE ot.seller_id = ? AND status = 'pending' AND ot.deleted_at IS NULL 
+            ORDER BY ot.id DESC
+            LIMIT ? OFFSET ?
+        ");
+        $stmt->execute([$user_id, $limit, $offset]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getCompletedTransfersPagination($offset = 0, $limit = 10, $user_id = null) {
+        $user_id ??= $_SESSION['user_id'];
+        $stmt = $this->db->prepare("
+             SELECT 
+                ot.*,
+                us.name as seller_name, us.email as seller_email, us.phone as seller_phone, us.nin as seller_nin,
+                ub.name as buyer_name, ub.email as buyer_email, ub.phone as buyer_phone, ub.nin as buyer_nin,
+                v.*,
+                m.*,
+                pn.*
+            FROM ownership_transfers ot
+            JOIN users us ON ot.seller_id = us.id
+            JOIN users ub ON ot.buyer_id = ub.id
+            JOIN vehicles v ON ot.vehicle_id = v.id
+            JOIN vehicle_models m ON v.vehicle_model_id = m.id
+            JOIN plate_numbers pn ON v.current_plate_id = pn.id
+            WHERE (ot.seller_id = ? OR ot.buyer_id = ?) AND status = 'completed' AND ot.deleted_at IS NULL 
+            ORDER BY ot.id DESC
+            LIMIT ? OFFSET ?
+        ");
+        $stmt->execute([$user_id, $user_id, $limit, $offset]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+     public function getCompletedTransfersByDate($start_date, $end_date, $user_id = null) {
+        $user_id ??= $_SESSION['user_id'];
+        $stmt = $this->db->prepare("
+            SELECT 
+                ot.*,
+                us.name as seller_name, us.email as seller_email, us.phone as seller_phone, us.nin as seller_nin,
+                ub.name as buyer_name, ub.email as buyer_email, ub.phone as buyer_phone, ub.nin as buyer_nin,
+                v.*,
+                m.*,
+                pn.*
+            FROM ownership_transfers ot
+            JOIN users us ON ot.seller_id = us.id
+            JOIN users ub ON ot.buyer_id = ub.id
+            JOIN vehicles v ON ot.vehicle_id = v.id
+            JOIN vehicle_models m ON v.vehicle_model_id = m.id
+            JOIN plate_numbers pn ON v.current_plate_id = pn.id
+            WHERE (ot.seller_id = ? OR ot.buyer_id = ?)
+                AND status = 'completed'
+                AND ot.deleted_at IS NULL
+                AND ot.created_at BETWEEN ? AND ?
+            ORDER BY ot.id DESC
+        ");
+        $stmt->execute([$user_id, $user_id, $start_date, $end_date]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+
+    public function countIncomingTransfers($user_id = null) {
+        $user_id ??= $_SESSION['user_id'];
+        $stmt = $this->db->prepare("
+            SELECT COUNT(*) as count 
+            FROM ownership_transfers ot
+            WHERE ot.buyer_id = ? AND status = 'pending' AND ot.deleted_at IS NULL 
+        ");
+        $stmt->execute([$user_id]);
+        return $stmt->fetch()->count;
+    }
+
+    public function countOutgoingTransfers($user_id = null) {
+        $user_id ??= $_SESSION["user_id"];
+        $stmt = $this->db->prepare("
+        SELECT COUNT(*) as count 
+            FROM ownership_transfers ot
+            WHERE ot.seller_id = ? AND status = 'pending' 
+            AND ot.deleted_at IS NULL 
+        ");
+        $stmt->execute([$user_id]);
+        return $stmt->fetch()->count;
+    }
+
+     public function countCompletedTransfers($user_id = null) {
+        $user_id ??= $_SESSION["user_id"];
+        $stmt = $this->db->prepare("
+        SELECT COUNT(*) as count 
+            FROM ownership_transfers ot
+            WHERE ot.buyer_id = ?
+            AND status = 'completed' AND ot.deleted_at IS NULL 
+        ");
+        $stmt->execute([$user_id]);
+        return $stmt->fetch()->count;
+    }
+
+    public function countRejectedTransfers($user_id = null) {
+        $user_id ??= $_SESSION["user_id"];
+        $stmt = $this->db->prepare("
+         SELECT COUNT(*) as count 
+            FROM ownership_transfers ot
+            WHERE (ot.seller_id = ? OR ot.buyer_id = ?) 
+            AND status = 'rejected' AND ot.deleted_at IS NULL
+        ");
+        $stmt->execute([$user_id, $user_id]);   
+        return $stmt->fetch()->count;
+    }
+
+    public function countTotalTransfers($user_id = null) {
+        $user_id ??= $_SESSION["user_id"];
+        $stmt = $this->db->prepare("
+            SELECT COUNT(*) as count 
+            FROM ownership_transfers ot
+            WHERE (ot.seller_id = ? OR ot.buyer_id = ?) 
+             AND ot.deleted_at IS NULL
+        ");
+        $stmt->execute([$user_id, $user_id]);
+        return $stmt->fetch()->count;
+    }
+
+    public function stats($user_id = null) {
+        $user_id ??= $_SESSION["user_id"];
+        $stats = [
+                'total'=> $this->countTotalTransfers($user_id),
+                'pending' => $this->countIncomingTransfers($user_id),
+                'accepted' => $this->countCompletedTransfers($user_id),
+                'rejected' => $this->countRejectedTransfers($user_id)
+        ];
+        return $stats;
     }
 }
 ?>

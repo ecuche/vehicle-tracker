@@ -614,4 +614,60 @@ function getActivityColor($action) {
     ];
     return $colors[$action] ?? 'secondary';
 }
+// Helper functions for PHP
+function formatRelativeTime($dateString) {
+    $date = new DateTime($dateString);
+    $now = new DateTime();
+    $interval = $date->diff($now);
+    
+    if ($interval->days > 0) {
+        return $interval->days . ' day' . ($interval->days !== 1 ? 's' : '') . ' ago';
+    } elseif ($interval->h > 0) {
+        return $interval->h . ' hour' . ($interval->h !== 1 ? 's' : '') . ' ago';
+    } else {
+        return $interval->i . ' minute' . ($interval->i !== 1 ? 's' : '') . ' ago';
+    }
+}
+
+function buildPaginationUrl($page) {
+    $params = $_GET;
+    $params['page'] = $page;
+    $queryString = http_build_query($params);
+    return '?' . $queryString;
+}
+
+// Helper function for transfer type badges
+function getTransferTypeBadge($type) {
+    $badges = [
+        'sale' => 'success',
+        'gift' => 'info',
+        'inheritance' => 'warning',
+        'admin_transfer' => 'primary',
+        'other' => 'secondary'
+    ];
+    return $badges[$type] ?? 'secondary';
+}
+
+
+// Helper functions for PHP
+function getTransferStatusBadge($status) {
+    $badges = [
+        'pending' => '<span class="badge bg-warning">Pending</span>',
+        'completed' => '<span class="badge bg-success">Completed</span>',
+        'accepted' => '<span class="badge bg-success">Accepted</span>',
+        'rejected' => '<span class="badge bg-danger">Rejected</span>',
+        'cancelled' => '<span class="badge bg-secondary">Cancelled</span>'
+    ];
+    return $badges[$status] ?? '<span class="badge bg-secondary">Unknown</span>';
+}
+
+function getStatusDescription($status) {
+    $descriptions = [
+        'pending' => 'Awaiting response',
+        'completed' => 'Transfer completed',
+        'rejected' => 'Transfer declined',
+        'cancelled' => 'Transfer cancelled'
+    ];
+    return $descriptions[$status] ?? 'Unknown status';
+}
 ?>

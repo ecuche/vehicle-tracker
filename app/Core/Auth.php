@@ -2,16 +2,19 @@
 namespace App\Core;
 
 use App\Models\User;
+use App\Core\Request;
 
 class Auth {
     private $session;
     private $user;
     private $db;
+    private $request;
 
     public function __construct() {
         $this->session = new Session();
         $this->user = new User();
         $this->db = Database::getInstance();
+        $this->request = new Request();
     }
 
     public function login($user) {
@@ -117,7 +120,7 @@ class Auth {
     public function requireAuth() {
         if (!$this->isLoggedIn()) {
             $this->session->setFlash('error', 'Please log in to access this page.');
-            header('Location: '.$_ENV['APP_URL'].'/login');
+            $this->request->redirect('login');
             exit;
         }
     }
@@ -127,7 +130,7 @@ class Auth {
 
         if (!$this->checkPermission($role)) {
             $this->session->setFlash('error', 'You do not have permission to access this page.');
-            header('Location: '.$_ENV['APP_URL'].'/dashboard');
+            $this->request->redirect('dashboard');
             exit;
         }
     }

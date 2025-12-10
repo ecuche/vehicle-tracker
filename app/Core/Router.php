@@ -164,8 +164,10 @@ class Router {
         $this->add('vehicles/search-user', ['controller' => 'VehicleController', 'action' => 'searchUser']);
         $this->add('vehicles/view/ownership-history/{vin:[^/]+}', ['controller' => 'VehicleController', 'action' => 'viewOwnershipHistory']);
         $this->add('vehicles/view/status-history/{vin:[^/]+}', ['controller' => 'VehicleController', 'action' => 'viewStatusHistory']);
-
-        
+        $this->add('vehicles/completed-transfers', ['controller' => 'VehicleController', 'action' => 'completedTransfers']);
+        $this->add('vehicles/incoming-transfers', ['controller' => 'VehicleController', 'action' => 'IncomingTransfers']);
+        $this->add('vehicles/outgoing-transfers', ['controller' => 'VehicleController', 'action' => 'outgoingTransfers']);
+        $this->add('vehicles/pending-transfer/{vin:[^/]+}', ['controller' => 'VehicleController', 'action' => 'pendingTransfers']);
         
         // Search routes
         $this->add('search', ['controller' => 'SearchController', 'action' => 'index']);

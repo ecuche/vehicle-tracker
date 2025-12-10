@@ -10,6 +10,7 @@ use App\Models\Audit;
 use App\Models\VehicleModel;
 use App\Models\PlateNumber;
 use App\Models\VehicleStatusHistory;
+use App\Models\searchHistory;
 
 // Import core classes
 use App\Core\Session;
@@ -30,6 +31,7 @@ abstract class Controller{
     protected $audit;
     protected $vehicleModel;
     protected $plateNumber;
+    protected $searchHistory;
     protected $vehicleStatusHistory;
 
     //other core classes
@@ -50,6 +52,7 @@ abstract class Controller{
         $this->vehicleModel = new VehicleModel();
         $this->plateNumber = new PlateNumber();
         $this->vehicleStatusHistory = new VehicleStatusHistory();
+        $this->searchHistory = new SearchHistory(); 
 
         //other core classes
         $this->auth = new Auth();

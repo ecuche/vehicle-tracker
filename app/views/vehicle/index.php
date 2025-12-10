@@ -1,38 +1,46 @@
 <?php
 $title = "My Vehicles";
 $actions = '
-    <a href="'.$_ENV["APP_URL"].'/vehicles/register" class="btn btn-primary">
+    <a href="'.url('vehicles/register').'" class="btn btn-primary">
         <i class="bi bi-plus-circle"></i> Register New Vehicle
     </a>
 ';
 
 ob_start();
 ?>
-<!-- Stats Overview -->
+<!-- Stats Overview -->.
 <div class="row mb-4">
     <div class="col-md-3">
-        <div class="card stats-card">
-            <div class="stats-number"><?= $total_vehicles; ?></div>
-            <div class="stats-label">Total Vehicles</div>
-        </div>
+        <a href="<?= url('vehicles') ?>">
+            <div class="card stats-card">
+                <div class="stats-number"><?= $total_vehicles; ?></div>
+                <div class="stats-label">Total Vehicles</div>
+            </div>
+        </a>
     </div>
     <div class="col-md-3">
-        <div class="card stats-card">
-            <div class="stats-number"><?= $pending_requests; ?></div>
-            <div class="stats-label">Pending Transfers</div>
-        </div>
+        <a href="<?= url('vehicles/outgoing-transfers') ?>">
+            <div class="card stats-card">
+                <div class="stats-number"><?= $pending_requests; ?></div>
+                <div class="stats-label">Outgoing Transfers</div>
+            </div>
+        </a>
     </div>
     <div class="col-md-3">
-        <div class="card stats-card">
-            <div class="stats-number"><?= $incoming_requests; ?></div>
-            <div class="stats-label">Incoming Transfers</div>
-        </div>
+        <a href="<?= url('vehicles/incoming-transfers') ?>">
+            <div class="card stats-card">
+                <div class="stats-number"><?= $incoming_requests; ?></div>
+                <div class="stats-label">Incoming Transfers</div>
+            </div>
+        </a>
     </div>
     <div class="col-md-3">
-        <div class="card stats-card">
-            <div class="stats-number"><?= $sold_vehicles; ?></div>
-            <div class="stats-label">Sold Vehicles</div>
-        </div>
+        <a href="<?= url('vehicles/completed-transfers') ?>">
+            <div class="card stats-card">
+                <div class="stats-number"><?= $sold_vehicles; ?></div>
+                <div class="stats-label">Sold Vehicles</div>
+            </div>
+        </a>
     </div>
 </div>
 <!-- Vehicles List -->
@@ -87,9 +95,9 @@ ob_start();
                     <tr>
                         <td>
                             <div class="d-flex align-items-center">
-                                <?php if ($vehicle->image_count > 0): ?>
+                                <?php if ($vehicle['image_count'] > 0): ?>
                                 <img src="<?= $_ENV["APP_URL"] ?>/public/assets/images/primary-image.png" 
-                                     alt="<?= e($vehicle->make); ?> <?= e($vehicle->model); ?>" 
+                                     alt="<?= e($vehicle['make']); ?> <?= e($vehicle['model']); ?>" 
                                      class="rounded me-3" 
                                      width="40" 
                                      height="40"
@@ -101,26 +109,26 @@ ob_start();
                                 </div>
                                 <?php endif; ?>
                                 <div>
-                                    <strong><?= e($vehicle->make); ?> <?= e($vehicle->model); ?></strong>
+                                    <strong><?= e($vehicle['make']); ?> <?= e($vehicle['model']); ?></strong>
                                 </div>
                             </div>
                         </td>
                         <td>
-                            <code><?= e($vehicle->vin); ?></code>
+                            <code><?= e($vehicle['vin']); ?></code>
                         </td>
                         <td>
-                            <span class="badge bg-dark"><?= e($vehicle->current_plate_number); ?></span>
+                            <span class="badge bg-dark"><?= e($vehicle['current_plate_number']); ?></span>
                         </td>
-                        <td><?= e($vehicle->year); ?></td>
+                        <td><?= e($vehicle['year']); ?></td>
                         <td>
-                            <?= vehicle_status_badge($vehicle->current_status); ?>
+                            <?= vehicle_status_badge($vehicle['current_status']); ?>
                         </td>
                         <td>
-                            <small class="text-muted"><?= relative_time($vehicle->created_at); ?></small>
+                            <small class="text-muted"><?= relative_time($vehicle['created_at']); ?></small>
                         </td>
                         <td>
                             <div class="btn-group btn-group-sm">
-                                <a href="<?= url('vehicles/view/'.$vehicle->vin) ?>" 
+                                <a href="<?= url('vehicles/view/'.$vehicle['vin']) ?>" 
                                    class="btn btn-outline-primary" 
                                    title="View Details">
                                     <i class="bi bi-eye"></i>
