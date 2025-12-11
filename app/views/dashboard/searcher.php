@@ -1,5 +1,6 @@
 <?php
 $title = "Driver Dashboard";
+$hide_back = true;
 ob_start();
 ?>
 <!-- Stats Overview -->
@@ -44,7 +45,7 @@ ob_start();
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">My Vehicles</h5>
-                <a href="<?= $_ENV['APP_URL'] ?>/vehicles" class="btn btn-sm btn-outline-primary">View All</a>
+                <a href="<?= url('vehicles') ?>" class="btn btn-sm btn-outline-primary">View All</a>
             </div>
             <div class="card-body">
                 <?php if (empty($vehicles)): ?>
@@ -52,7 +53,7 @@ ob_start();
                     <i class="bi bi-truck display-1 text-muted"></i>
                     <h4 class="text-muted mt-3">No Vehicles Registered</h4>
                     <p class="text-muted">You haven't registered any vehicles yet.</p>
-                    <a href="<?= $_ENV['APP_URL'] ?>/vehicles/register" class="btn btn-primary">
+                    <a href="<?= url('vehicles/register') ?>" class="btn btn-primary">
                         <i class="bi bi-plus-circle"></i> Register Your First Vehicle
                     </a>
                 </div>
@@ -62,9 +63,9 @@ ob_start();
                     <div class="col-md-6 mb-3">
                         <div class="card vehicle-card h-100">
                             <div class="vehicle-image">
-                                <?php if ($vehicle->image_count > 0): ?>
-                                <img src="<?= $_ENV['APP_URL'] ?>/assets/uploads/vehicles/images/<?= $vehicle->primary_image; ?>" 
-                                     alt="<?= e($vehicle->make); ?> <?= e($vehicle->model); ?>" 
+                                <?php if ($vehicle['image_count'] > 0): ?>
+                                <img src="<?= url('public/assets/images/primary-image.png') ?>" 
+                                     alt="<?= e($vehicle['make']); ?> <?= e($vehicle['model']); ?>" 
                                      class="card-img-top" 
                                      style="height: 150px; object-fit: cover;">
                                 <?php else: ?>
@@ -73,28 +74,25 @@ ob_start();
                                 </div>
                                 <?php endif; ?>
                                 <div class="vehicle-status">
-                                    <?= vehicle_status_badge($vehicle->current_status); ?>
+                                    <?= vehicle_status_badge($vehicle['current_status']); ?>
                                 </div>
                             </div>
                             <div class="card-body">
-                                <h6 class="card-title"><?= e($vehicle->make); ?> <?= e($vehicle->model); ?></h6>
+                                <h6 class="card-title"><?= e($vehicle['make']); ?> <?= e($vehicle['model']); ?></h6>
                                 <p class="card-text small mb-1">
-                                    <strong>VIN:</strong> <code><?= e($vehicle->vin); ?></code><br>
-                                    <strong>Plate:</strong> <?= e($vehicle->current_plate_number); ?><br>
-                                    <strong>Year:</strong> <?= e($vehicle->year); ?>
+                                    <strong>VIN:</strong> <code><?= e($vehicle['vin']); ?></code><br>
+                                    <strong>Plate:</strong> <?= e($vehicle['current_plate_number']); ?><br>
+                                    <strong>Year:</strong> <?= e($vehicle['year']); ?>
                                 </p>
                             </div>
                             <div class="card-footer">
                                 <div class="btn-group w-100">
-                                    <a href="<?= $_ENV['APP_URL'] ?>/vehicles/details/<?= $vehicle->id; ?>" class="btn btn-sm btn-outline-primary">
+                                    <a href="<?= url('vehicles/view/'.$vehicle['vin']) ?>" class="btn btn-sm btn-outline-primary">
                                         <i class="bi bi-eye"></i> View
                                     </a>
-                                    <button type="button" 
-                                            class="btn btn-sm btn-outline-secondary"
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#transferModal<?= $vehicle->id; ?>">
+                                    <a href="<?= url('vehicles/transfer/'.$vehicle['vin']) ?>" class="btn btn-sm btn-outline-seconday border text-muted">
                                         <i class="bi bi-arrow-left-right"></i> Transfer
-                                    </button>
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -122,22 +120,22 @@ ob_start();
                     <div class="list-group-item px-0">
                         <div class="d-flex w-100 justify-content-between">
                             <h6 class="mb-1">Transfer Request</h6>
-                            <small class="text-muted"><?= relative_time($transfer->created_at); ?></small>
+                            <small class="text-muted"><?= relative_time($transfer['created_at']); ?></small>
                         </div>
                         <p class="mb-1 small">
-                            <strong>Vehicle:</strong> <?= e($transfer->make); ?> <?= e($transfer->model); ?><br>
-                            <strong>From:</strong> <?= e($transfer->from_user_email); ?>
+                            <strong>Vehicle:</strong> <?= e($transfer['make']); ?> <?= e($transfer['model']); ?><br>
+                            <strong>From:</strong> <?= e($transfer['seller_email']); ?>
                         </p>
                         <div class="btn-group btn-group-sm mt-2">
-                            <form action="<?= $_ENV['APP_URL'] ?>/vehicles/handle-transfer" method="POST" class="d-inline">
+                            <form action="<?= url('vehicles/handle-transfer') ?>" method="POST" class="d-inline">
                                 <?php csrf_field(); ?>
-                                <input type="hidden" name="transfer_id" value="<?= $transfer->id; ?>">
+                                <input type="hidden" name="transfer_id" value="<?= $transfer['id']; ?>">
                                 <input type="hidden" name="action" value="accept">
                                 <button type="submit" class="btn btn-success btn-sm">Accept</button>
                             </form>
-                            <form action="<?= $_ENV['APP_URL'] ?>/vehicles/handle-transfer" method="POST" class="d-inline">
+                            <form action="<?= url('vehicles/handle-transfer') ?>" method="POST" class="d-inline">
                                 <?php csrf_field(); ?>
-                                <input type="hidden" name="transfer_id" value="<?= $transfer->id; ?>">
+                                <input type="hidden" name="transfer_id" value="<?= $transfer['id']; ?>">
                                 <input type="hidden" name="action" value="reject">
                                 <button type="submit" class="btn btn-danger btn-sm">Reject</button>
                             </form>
@@ -162,18 +160,18 @@ ob_start();
                     <?php foreach ($recent_transfers as $transfer): ?>
                     <div class="list-group-item px-0">
                         <div class="d-flex w-100 justify-content-between">
-                            <h6 class="mb-1"><?= transfer_status_badge($transfer->status); ?></h6>
-                            <small class="text-muted"><?= relative_time($transfer->created_at); ?></small>
+                            <h6 class="mb-1"><?= transfer_status_badge($transfer['status']); ?></h6>
+                            <small class="text-muted"><?= relative_time($transfer['created_at']); ?></small>
                         </div>
                         <p class="mb-1 small">
-                            <?= e($transfer->make); ?> <?= e($transfer->model); ?><br>
+                            <?= e($transfer['make']); ?> <?= e($transfer['model']); ?><br>
                             <small class="text-muted">
-                                <?php if ($transfer->status === 'accepted'): ?>
-                                Transferred to <?= e($transfer->to_user_email); ?>
-                                <?php elseif ($transfer->status === 'rejected'): ?>
+                                <?php if ($transfer['status'] === 'accepted'): ?>
+                                Transferred to <?= e($transfer['buyer_email']); ?>
+                                <?php elseif ($transfer['status'] === 'rejected'): ?>
                                 Transfer rejected
                                 <?php else: ?>
-                                Waiting for response from <?= e($transfer->to_user_email); ?>
+                                Waiting for response from <?= e($transfer['buyer_email']); ?>
                                 <?php endif; ?>
                             </small>
                         </p>
@@ -196,25 +194,25 @@ ob_start();
             <div class="card-body">
                 <div class="row text-center">
                     <div class="col-md-3 mb-3">
-                        <a href="<?= $_ENV['APP_URL'] ?>/vehicles/register" class="btn btn-primary w-100 py-3">
+                        <a href="<?= url('vehicles/register') ?>" class="btn btn-primary w-100 py-3">
                             <i class="bi bi-plus-circle display-6 d-block mb-2"></i>
                             Register Vehicle
                         </a>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <a href="<?= $_ENV['APP_URL'] ?>/vehicles" class="btn btn-outline-primary w-100 py-3">
+                        <a href="<?= url('vehicles') ?>" class="btn btn-outline-primary w-100 py-3">
                             <i class="bi bi-truck display-6 d-block mb-2"></i>
                             My Vehicles
                         </a>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <a href="<?= $_ENV['APP_URL'] ?>/profile" class="btn btn-outline-secondary w-100 py-3">
+                        <a href="<?= url('profile') ?>" class="btn btn-outline-secondary w-100 py-3">
                             <i class="bi bi-person display-6 d-block mb-2"></i>
                             My Profile
                         </a>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <a href="<?= $_ENV['APP_URL'] ?>/search" class="btn btn-outline-info w-100 py-3">
+                        <a href="<?= url('search') ?>" class="btn btn-outline-info w-100 py-3">
                             <i class="bi bi-search display-6 d-block mb-2"></i>
                             Search Vehicles
                         </a>

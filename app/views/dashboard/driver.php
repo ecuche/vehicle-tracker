@@ -1,5 +1,6 @@
 <?php
 $title = "Driver Dashboard";
+$hide_back = true;
 ob_start();
 ?>
 <!-- Stats Overview -->

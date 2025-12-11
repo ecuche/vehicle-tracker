@@ -1,5 +1,5 @@
 <?php
-$title = "Pending Transfer - " . ($vehicle['make'] ?? '') . " " . ($vehicle['model'] ?? '');
+$title = "Pending Transfer - " . ($model['make'] ?? '') . " " . ($model['model'] ?? '');
 ob_start();
 ?>
 
@@ -48,13 +48,6 @@ ob_start();
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        <strong>Important:</strong> You have a pending vehicle transfer request. 
-                        Please review the details and respond within 
-                        <strong><?= $transfer['expires_in']; ?> days</strong>.
-                    </div>
-                    
                     <div class="row">
                         <div class="col-md-6">
                             <h6>Vehicle Information</h6>
@@ -186,7 +179,8 @@ ob_start();
                                     </span>
                                 </div>
                             </div>
-                            
+                            <input type="hidden" id="vin" value="<?= $vehicle['vin'] ?>">
+                            <input type="hidden" id="transfer_id" value="<?= $transfer['id'] ?>">
                             <div class="mb-3">
                                 <strong class="text-muted">Transfer Amount</strong>
                                 <div class="mt-1">
@@ -271,12 +265,6 @@ ob_start();
                         <li>The vehicle remains with the current owner</li>
                         <li>You can provide a reason for rejection (optional)</li>
                     </ul>
-                    
-                    <div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        <strong>Note:</strong> If you don't respond within <?= $transfer['expires_in']; ?> days, 
-                        this transfer will automatically expire and be cancelled.
-                    </div>
                 </div>
             </div>
         </div>
@@ -636,41 +624,40 @@ function showRejectModal() {
 function acceptTransfer() {
     const notes = document.getElementById('accept_notes').value;
     const confirmBtn = document.getElementById('confirmAcceptBtn');
-    
+    vin = document.getElementById('vin').value;
+    transfer_id = document.getElementById('transfer_id').value;
     // Disable button and show loading
-    confirmBtn.disabled = true;
-    confirmBtn.innerHTML = '<div class="spinner-border spinner-border-sm me-1"></div> Accepting...';
-    
-    fetch(`/vehicles/transfers/<?= $transfer['id']; ?>/accept`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
+    // confirmBtn.disabled = true;
+    // confirmBtn.innerHTML = '<div class="spinner-border spinner-border-sm me-1"></div> Accepting...';
+
+    $.ajax({
+        type: "POST",
+        url: appUrl + "/api/vehicles/accept-transfer/"+vin,
+        data: {
+            notes: notes,
+            vin: vin,
+            transfer_id: transfer_id,
         },
-        body: JSON.stringify({
-            notes: notes
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            VehicleTrackerApp.showToast('Transfer accepted successfully!', 'success');
-            bootstrap.Modal.getInstance(document.getElementById('acceptModal')).hide();
-            
-            // Redirect to vehicles page after delay
-            setTimeout(() => {
-                window.location.href = '/vehicles';
-            }, 2000);
-        } else {
-            throw new Error(data.error || 'Failed to accept transfer');
+        success: (response) => {
+            data = JSON.parse(response); 
+            if (data.success) {
+                App.showToast('Transfer accepted successfully!', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('acceptModal')).hide();
+                // Redirect to vehicles page after delay
+                setTimeout(() => {
+                    window.location.href = appUrl + '/vehicles/view/' + vin;
+                }, 2000);
+            } else {
+                throw new Error(data.error || 'Failed to accept transfer');
+            }
+        },
+        error: (error) => {
+            console.error('Accept error:', error);
+            App.showToast(error.message, 'error');
+            // Re-enable button
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Accept Transfer';
         }
-    })
-    .catch(error => {
-        console.error('Accept error:', error);
-        VehicleTrackerApp.showToast(error.message, 'error');
-        
-        // Re-enable button
-        confirmBtn.disabled = false;
-        confirmBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Accept Transfer';
     });
 }
 

@@ -2,12 +2,19 @@
 namespace App\Models;
 
 use App\Core\Model;
+use App\Core\Validator;
 use App\Core\Database;
 use PDO;
 
 class Vehicle extends Model {
 
     protected $table = "vehicles";
+    protected $validation;
+
+    public function __construct(){
+        parent::__construct();
+        $this->validation = new Validator();
+    }
 
     public function create($data, $images = [], $documents = []) {
         $this->db->beginTransaction();
@@ -122,7 +129,7 @@ class Vehicle extends Model {
             LEFT JOIN plate_numbers pn ON v.id = pn.vehicle_id AND pn.is_current = 1
             LEFT JOIN vehicle_images vi ON v.id = vi.vehicle_id AND vi.deleted_at IS NULL
             LEFT JOIN vehicle_documents vd ON v.id = vd.vehicle_id AND vd.deleted_at IS NULL
-            WHERE v.user_id = ? AND v.deleted_at IS NULL
+            WHERE v.user_id = ? AND v.deleted_at IS NULL AND transfer_status = 'completed'
         ";
 
         if ($current_only) {
@@ -217,8 +224,8 @@ class Vehicle extends Model {
 
     public function getFullDetails($vehicle_id) {
         // Get vehicle basic info
-        $vehicle_stmt = $this->db->prepare("
-            SELECT 
+        $add = $this->validation->validateVIN(vin: $vehicle_id) ?  "  WHERE v.vin = ? AND v.deleted_at IS NULL " : " WHERE v.id = ? AND v.deleted_at IS NULL ";
+        $sql = "SELECT 
                 v.*,
                 vm.make,
                 vm.model,
@@ -229,11 +236,12 @@ class Vehicle extends Model {
             FROM vehicles v
             LEFT JOIN vehicle_models vm ON v.vehicle_model_id = vm.id
             LEFT JOIN users u ON v.user_id = u.id
-            LEFT JOIN plate_numbers pn ON v.id = pn.vehicle_id AND pn.is_current = 1
-            WHERE v.id = ? AND v.deleted_at IS NULL
-        ");
+            LEFT JOIN plate_numbers pn ON v.id = pn.vehicle_id AND pn.is_current = 1 {$add}";
+
+        $vehicle_stmt = $this->db->prepare($sql);
         $vehicle_stmt->execute([$vehicle_id]);
         $vehicle = $vehicle_stmt->fetch(PDO::FETCH_ASSOC);
+        $vehicle_id = $vehicle["id"];
 
         if (!$vehicle) {
             return null;

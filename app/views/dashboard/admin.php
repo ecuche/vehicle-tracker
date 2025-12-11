@@ -1,5 +1,6 @@
 <?php
 $title = "Admin Dashboard";
+$hide_back = true;
 ob_start();
 ?>
 <!-- Admin Stats Overview -->

@@ -31,7 +31,11 @@ abstract class Model {
 
     public function returnObject($result) {
         return  (object)$result;
-    }   
+    }
+
+    public function sqlNow() {
+        echo date('Y-m-d H:i:s');
+    }
 
     public function insert($data, $table = null) {
         $table ??= $this->getTable();
@@ -156,6 +160,52 @@ abstract class Model {
         $setClause = implode(", ", array_map(fn($col) => "$col = ?", array_keys($data)));
         $stmt = $this->db->prepare("UPDATE $table SET $setClause WHERE id = ? AND deleted_at IS NULL");
         return $stmt->execute(array_merge(array_values($data), [$id]));
+    }
+
+    public function updateAndGetById($data, $id, $table = null) {
+        $table ??= $this->getTable();
+        $setClause = implode(", ", array_map(fn($col) => "$col = ?", array_keys($data)));
+        $stmt = $this->db->prepare("UPDATE $table SET $setClause WHERE id = ? AND deleted_at IS NULL");
+        $success = $stmt->execute(array_merge(array_values($data), [$id]));
+        if ($success) {
+            return $this->findById($id, $table);
+        }
+        return false;
+    }
+
+    public function hardUpdateAndGetById($data, $id, $table = null) {
+        $table ??= $this->getTable();
+        $setClause = implode(", ", array_map(fn($col) => "$col = ?", array_keys($data)));
+        $stmt = $this->db->prepare("UPDATE $table SET $setClause WHERE id = ?");
+        $success = $stmt->execute(array_merge(array_values($data), [$id]));
+        if ($success) {
+            return $this->hardFindById($id, $table);
+        }
+        return false;
+    }
+
+    public function updateAndget($data, $where, $table = null) {
+        $table ??= $this->getTable();
+        $setClause = implode(", ", array_map(fn($col) => "$col = ?", array_keys($data)));
+        $whereClause = implode(" AND ", array_map(fn($col) => "$col = ?", array_keys($where)));
+        $stmt = $this->db->prepare("UPDATE $table SET $setClause WHERE $whereClause AND deleted_at IS NULL");
+        $success = $stmt->execute(array_merge(array_values($data), array_values($where)));
+        if ($success) {
+            return $this->find($where, $table);
+        }
+        return false;
+    }
+
+    public function hardUpdateAndget($data, $where, $table = null) {
+        $table ??= $this->getTable();
+        $setClause = implode(", ", array_map(fn($col) => "$col = ?", array_keys($data)));
+        $whereClause = implode(" AND ", array_map(fn($col) => "$col = ?", array_keys($where)));
+        $stmt = $this->db->prepare("UPDATE $table SET $setClause WHERE $whereClause");
+        $success = $stmt->execute(array_merge(array_values($data), array_values($where)));
+        if ($success) {
+            return $this->hardFind($where, $table);
+        }
+        return false;
     }
 
     public function updateAllFirst($data, $table = null) {
@@ -573,27 +623,51 @@ abstract class Model {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function findFirstRow($table = null) {
+     public function findFirstRow($table = null) {
+        $table ??= $this->getTable();
+        $stmt = $this->db->prepare("SELECT * FROM $table WHERE deleted_at IS NULL LIMIT 1");
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function hardFindFirstRow($table = null) {
         $table ??= $this->getTable();
         $stmt = $this->db->prepare("SELECT * FROM $table LIMIT 1");
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function findAllLast($table = null) {
+    public function findLastRow($table = null) {
+        $table ??= $this->getTable();
+        $stmt = $this->db->prepare("SELECT * FROM $table WHERE deleted_at IS NULL  ORDER BY id DESC LIMIT 1");
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function hardFindLastRow($table = null) {
         $table ??= $this->getTable();
         $stmt = $this->db->prepare("SELECT * FROM $table ORDER BY id DESC LIMIT 1");
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-     public function findLast($where, $table = null) {
+    public function findLast($where, $table = null) {
         $table ??= $this->getTable();
         $whereClause = implode(" AND ", array_map(fn($col) => "$col = ?", array_keys($where)));
         $stmt = $this->db->prepare("SELECT * FROM $table WHERE $whereClause AND deleted_at IS NULL ORDER BY id DESC LIMIT 1");
         $stmt->execute(array_values($where));
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+
+     public function hardFindLast($where, $table = null) {
+        $table ??= $this->getTable();
+        $whereClause = implode(" AND ", array_map(fn($col) => "$col = ?", array_keys($where)));
+        $stmt = $this->db->prepare("SELECT * FROM $table WHERE $whereClause ORDER BY id DESC LIMIT 1");
+        $stmt->execute(array_values($where));
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+
 
     public function countRow($where = [], $table = null) {
         $table ??= $this->getTable();

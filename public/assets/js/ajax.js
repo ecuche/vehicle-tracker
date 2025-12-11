@@ -312,7 +312,7 @@ class AjaxHandler {
      * Get vehicle details
      */
     async getVehicleDetails(vehicleId) {
-        return await this.request(`/vehicles/details/${vehicleId}`, {}, 'GET');
+        return await this.request(`/api/vehicles/details/${vehicleId}`, {}, 'GET');
     }
 
     /**

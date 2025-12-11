@@ -8,7 +8,7 @@ $actions = '
 
 ob_start();
 ?>
-<!-- Stats Overview -->.
+<!-- Stats Overview -->
 <div class="row mb-4">
     <div class="col-md-3">
         <a href="<?= url('vehicles') ?>">

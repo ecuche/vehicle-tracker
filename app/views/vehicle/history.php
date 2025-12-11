@@ -148,7 +148,6 @@ ob_start();
                                             <th>Contact</th>
                                             <th>Ownership Period</th>
                                             <th>Status</th>
-                                            <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -191,14 +190,6 @@ ob_start();
                                                 <span class="badge bg-<?=$history['status'] === 'completed' ? 'success' : 'secondary'; ?>">
                                                     <?=ucfirst($history['status']); ?>
                                                 </span>
-                                            </td>
-                                            <td>
-                                                <?php if (!$history['is_current']): ?>
-                                                <button type="button" class="btn btn-sm btn-outline-info" 
-                                                        onclick="viewTransferDetails(<?=$history['transfer_id']; ?>)">
-                                                    <i class="bi bi-eye"></i>
-                                                </button>
-                                                <?php endif; ?>
                                             </td>
                                         </tr>
                                         <?php endforeach; ?>

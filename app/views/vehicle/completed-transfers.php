@@ -19,18 +19,6 @@ ob_start();
             <i class="bi bi-check-circle-fill me-2 text-primary"></i>Completed Vehicle Transfers
         </h1>
         <div class="d-flex align-items-center">
-            <!-- Search Form -->
-            <form method="GET" class="d-flex me-3" onsubmit="return false;">
-                <input type="text" 
-                       class="form-control form-control-sm" 
-                       id="searchInput" 
-                       placeholder="Search vehicles..." 
-                       value="<?= htmlspecialchars($search ?? ''); ?>">
-                <button type="button" class="btn btn-sm btn-outline-secondary ms-2" onclick="applySearch()">
-                    <i class="bi bi-search"></i>
-                </button>
-            </form>
-            
             <!-- Pagination Selector -->
             <div class="me-3">
                 <select class="form-select form-select-sm" id="perPageSelect" onchange="updatePerPage()">

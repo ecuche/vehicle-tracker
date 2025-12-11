@@ -111,11 +111,11 @@ function sendTransferNotification($recipientEmail, $vehicle, $fromUser) {
     
     $vehicleDetails = "
         <ul>
-            <li><strong>VIN:</strong> {$vehicle->vin}</li>
-            <li><strong>Plate Number:</strong> {$vehicle->current_plate_number}</li>
-            <li><strong>Make:</strong> {$vehicle->make}</li>
-            <li><strong>Model:</strong> {$vehicle->model}</li>
-            <li><strong>Year:</strong> {$vehicle->year}</li>
+            <li><strong>VIN:</strong> {$vehicle['vin']}</li>
+            <li><strong>Plate Number:</strong> {$vehicle['current_plate_number']}</li>
+            <li><strong>Make:</strong> {$vehicle['make']}</li>
+            <li><strong>Model:</strong> {$vehicle['model']}</li>
+            <li><strong>Year:</strong> {$vehicle['year']}</li>
         </ul>
     ";
     
@@ -141,7 +141,7 @@ function sendTransferNotification($recipientEmail, $vehicle, $fromUser) {
             </div>
             <div class='content'>
                 <h2>Vehicle Transfer Request</h2>
-                <p>You have received a vehicle transfer request from <strong>{$fromUser->email}</strong>.</p>
+                <p>You have received a vehicle transfer request from <strong>{$fromUser['email']}</strong>.</p>
                 
                 <div class='vehicle-details'>
                     <h3>Vehicle Details:</h3>
@@ -224,7 +224,7 @@ function sendVehicleStatusChangeNotification($ownerEmail, $vehicle, $newStatus) 
     
     $newStatusLabel = $statusLabels[$newStatus] ?? ucfirst($newStatus);
     
-    $vehicleUrl = base_url("vehicles/details/{$vehicle->id}");
+    $vehicleUrl = base_url("search/vehicle-profile/{$vehicle['id']}");
     
     $message = "
     <!DOCTYPE html>
@@ -249,9 +249,9 @@ function sendVehicleStatusChangeNotification($ownerEmail, $vehicle, $newStatus) 
                 <p>The status of your vehicle has been updated by the system administrator.</p>
                 
                 <div class='status-update'>
-                    <h3>Vehicle: {$vehicle->make} {$vehicle->model} ({$vehicle->year})</h3>
-                    <p><strong>VIN:</strong> {$vehicle->vin}</p>
-                    <p><strong>Plate Number:</strong> {$vehicle->current_plate_number}</p>
+                    <h3>Vehicle: {$vehicle['make']} {$vehicle['model']} ({$vehicle['year']})</h3>
+                    <p><strong>VIN:</strong> {$vehicle['vin']}</p>
+                    <p><strong>Plate Number:</strong> {$vehicle['current_plate_number']}</p>
                     <p><strong>New Status:</strong> <strong>{$newStatusLabel}</strong></p>
                 </div>
                 

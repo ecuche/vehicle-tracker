@@ -197,7 +197,7 @@ ob_start();
                         <div class="row">
                             <div class="col-12">
                                 <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                    <a href="<?= $_ENV['APP_URL'] ?>/admin/users" class="btn btn-secondary me-md-2">
+                                    <a href="<?= url('admin/users') ?>" class="btn btn-secondary me-md-2">
                                         <i class="bi bi-arrow-left me-1"></i> Back to Users
                                     </a>
                                     <button type="button" class="btn btn-outline-danger me-md-2" 

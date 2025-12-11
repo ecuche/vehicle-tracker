@@ -18,9 +18,11 @@ class ApiController extends Controller {
         }
     }
 
+    // public function checkUserPermission
+
     public function getUser(){
         $field = $this->request->post('field');
-        $value = $this->request->post('value');
+        $value = $this->request->post(name: 'value');
         $user = $this->user->findbyColumn($field, $value);
         if(!empty($field && !empty($value) && !empty($user))){
             echo json_encode($user);
@@ -171,5 +173,65 @@ class ApiController extends Controller {
         exit;
 
     } 
+
+    public function acceptTransfer($vin){
+        $this->auth->isLoggedIn();
+        $vehicle = $this->vehicle->findByVIN($vin);
+        $transfer = $this->transfer->findById($this->request->post('transfer_id'));
+        if($vin != $this->request->post('vin') || 
+            empty($vehicle) || 
+            empty($this->request->post('transfer_id')) ||
+            empty($transfer) ||
+            !$this->auth->checkUserIdPermisson($vehicle['user_id']) ||
+            !$this->auth->checkUserIdPermisson($transfer['buyer_id'])
+            ){
+            echo json_encode(['error'=> true]);
+            exit;
+        }
+        $this->transfer->updateAndGetById([
+            'buyer_id' => $this->auth->getUserId(),
+            'status' => 'completed',
+            'response' => $this->request->post('notes') ?? '',
+            'response_date' => date('Y-m-d H:i:s')
+        ], $transfer['id']);
+        $this->vehicle->updateAndGetById([
+            'transfer_status'=> 'completed',
+            'transfer_id' => $transfer['id'],
+            'user_id' => $this->auth->getUserId()
+        ], $vehicle['id']);
+        echo json_encode(['success'=> true]);
+        exit;
+
+    }
+
+     public function rejectTransfer($vin){
+        $this->auth->isLoggedIn();
+        $vehicle = $this->vehicle->findByVIN($vin);
+        $transfer = $this->transfer->findById($this->request->post('transfer_id'));
+        if($vin != $this->request->post('vin') || 
+            empty($vehicle) || 
+            empty($this->request->post('transfer_id')) ||
+            empty($transfer) ||
+            !$this->auth->checkUserIdPermisson($vehicle['user_id']) ||
+            !$this->auth->checkUserIdPermisson($transfer['buyer_id'])
+            ){
+            echo json_encode(['error'=> true]);
+            exit;
+        }
+        $this->transfer->updateAndGetById([
+            'buyer_id' => $this->auth->getUserId(),
+            'status' => 'rejected',
+            'response' => $this->request->post('notes') ?? '',
+            'response_date' => date('Y-m-d H:i:s')
+        ], $transfer['id']);
+        $this->vehicle->updateAndGetById([
+            'transfer_status'=> 'completed',
+            'transfer_id' => $transfer['id'],
+            'user_id' => $transfer['seller_id']
+        ], $vehicle['id']);
+        echo json_encode(['success'=> true]);
+        exit;
+
+    }
 }
 ?>

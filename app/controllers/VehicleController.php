@@ -374,7 +374,7 @@ class VehicleController extends Controller {
             'transfer' => $this->transfer->findAll(['vehicle_id'=> $vehicle['id']]),
             'user' => $this->user->findById($vehicle['user_id']),
         ];
-        $this->view('vehicle/details', $data);
+        $this->view('vehicle/profile', $data);
     }
 
     public function viewOwnershipHistory($vin) {  

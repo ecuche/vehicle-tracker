@@ -158,7 +158,6 @@ class Router {
         $this->add('vehicles/transfer/{vin:[^/]+}', ['controller' => 'VehicleController', 'action' => 'transferVehicle']);
         $this->add('vehicles/handle-transfer', ['controller' => 'VehicleController', 'action' => 'handleTransfer']);
         $this->add('vehicles/assign-plate', ['controller' => 'VehicleController', 'action' => 'assignPlate']);
-        $this->add('vehicles/details/{id:\d+}', ['controller' => 'VehicleController', 'action' => 'getVehicleDetails']);
         $this->add('vehicles/view/{vin:[^/]+}', ['controller' => 'VehicleController', 'action' => 'viewVehicle']);
         $this->add('vehicles/history/{vin:[^/]+}', ['controller' => 'VehicleController', 'action' => 'viewVehicleHistory']);
         $this->add('vehicles/search-user', ['controller' => 'VehicleController', 'action' => 'searchUser']);
@@ -209,6 +208,10 @@ class Router {
         $this->add('api/vehicle/transfer-ownership/{vin:[^/]+}', ['controller' => 'vehicleController', 'action' => 'handleTransfer']);
         $this->add('api/vehicle/assign-new-plate/{vin:[^/]+}', ['controller' => 'ApiController', 'action' => 'assignNewPlate']);
         $this->add('api/check-vin', ['controller' => 'VehicleController', 'action' => 'checkVIN']);
+        $this->add('api/vehicles/details/{vin:[^/]+}', ['controller' => 'VehicleController', 'action' => 'getVehicleDetails']);
+        $this->add('api/vehicles/accept-transfer/{vin:[^/]+}', ['controller' => 'ApiController', 'action' => 'acceptTransfer']);
+        $this->add('api/vehicles/reject-transfer/{vin:[^/]+}', ['controller' => 'ApiController', 'action' => 'rejectTransfer']);
+
 
         // Admin API
         $this->add('api/admin/update/user', ['controller' => 'AdminController', 'action' => 'updateUser']);

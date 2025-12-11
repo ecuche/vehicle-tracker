@@ -52,6 +52,8 @@ class DashboardController extends Controller {
 
     private function searcherDashboard($user_id) {
         // For searcher, dashboard is the search page
+        $vehicles = $this->vehicle->getUserVehicles($user_id, true);
+        $transfer = $this->transfer->getPendingTransfers($user_id);
         $recent_searches = $this->vehicle->getRecentSearches($user_id, 5);
         $total_vehicles = $this->vehicle->getUserVehicleCount($user_id);
         $pending_requests = $this->transfer->getOutgoingCount($user_id);
@@ -59,6 +61,8 @@ class DashboardController extends Controller {
         $failed_sales = $this->transfer->getFailedCount($user_id);
         $sold_vehicles = $this->transfer->getSoldCount($user_id);
         $data = [
+            'vehicles' => $vehicles,
+            'transfer' => $transfer,
             'recent_searches' => $recent_searches,
             'total_vehicles' => $total_vehicles,
             'pending_requests' => $pending_requests,

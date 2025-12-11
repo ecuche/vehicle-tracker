@@ -212,17 +212,26 @@
                 </div>
 
                 <!-- Page Header -->
-                <?php if (isset($title) && !isset($hide_header)): ?>
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2"><?= e($title); ?></h1>
+                <div class="d-flex flex-wrap flex-md-nowrap align-items-center justify-content-between pt-3 pb-2 mb-3 border-bottom">
+                    <div class="d-flex align-items-center">
+                        <?php if(!isset($hide_back)): ?> 
+                            <div class="btn-toolbar mb-2 mb-md-0 me-3">
+                                <button type="button" class="btn btn-secondary" onclick="history.back()" aria-label="Go back">
+                                    <i class="bi bi-arrow-left muted"></i>Back
+                                </button>
+                            </div>
+                        <?php endif; ?>
+                        <?php if (isset($title) && !isset($hide_header)): ?>
+                            <h1 class="h2 mb-0"><?= e($title); ?></h1>
+                        <?php endif; ?>
+                    </div>
+
                     <?php if (isset($actions)): ?>
-                    <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="btn-toolbar mb-2 mb-md-0 ms-auto">
                         <?= $actions; ?>
                     </div>
                     <?php endif; ?>
                 </div>
-                <?php endif; ?>
-
                 <!-- Page Content -->
                 <?= $content; ?>
             </main>

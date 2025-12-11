@@ -251,6 +251,13 @@ class Auth {
         return $this->session->generateCSRFToken();
     }
 
+    public function checkUserIdPermisson($user_id) {
+        if($this->getUserId() == $user_id) {
+            return true;
+        }
+        return false;
+    }
+
     public function validateCSRFToken($token) {
         return $this->session->validateCSRFToken($token);
     }
