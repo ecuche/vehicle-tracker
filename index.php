@@ -20,6 +20,7 @@ ini_set('log_errors', '1');
 
 define('APP_START', microtime(true));
 define('BASE_PATH', __DIR__);
+define('AUDIT_PATH', BASE_PATH . '/audit');
 define('APP_PATH', BASE_PATH . '/app');
 define('PUBLIC_PATH', BASE_PATH . '/public');
 define('STORAGE_PATH', BASE_PATH . '/storage');
@@ -43,7 +44,8 @@ $requiredDirs = [
     STORAGE_PATH . '/backups',
     UPLOAD_PATH . '/profiles',
     UPLOAD_PATH . '/vehicles/images',
-    UPLOAD_PATH . '/vehicles/documents'
+    UPLOAD_PATH . '/vehicles/documents',
+    AUDIT_PATH
 ];
 
 foreach ($requiredDirs as $dir) {

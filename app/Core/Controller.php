@@ -19,6 +19,7 @@ use App\Core\CSRF;
 use App\core\Upload;
 use App\Core\Validator;
 use App\Core\Request;
+use App\Core\CSV;
 
 
 abstract class Controller{
@@ -42,6 +43,7 @@ abstract class Controller{
     protected $validator;
     protected $csrf;
     protected $request;
+    protected $auditCSV;
 
     public function __construct() {
         //models
@@ -61,6 +63,7 @@ abstract class Controller{
         $this->session = new Session();
         $this->csrf = new CSRF();
         $this->request = new Request();
+        $this->auditCSV = new CSV('audit_trail');
     }
 
     protected function view(string $template, array $data = []): void

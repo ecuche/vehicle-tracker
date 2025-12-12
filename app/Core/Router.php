@@ -218,7 +218,7 @@ class Router {
         $this->add('search', ['controller' => 'SearchController', 'action' => 'index']);
         $this->add('search/vehicle', ['controller' => 'SearchController', 'action' => 'searchVehicle']);
         $this->add('search/advanced', ['controller' => 'SearchController', 'action' => 'searchVehicleAdvanced']);
-        $this->add('search/vehicle-profile/{vin:[0-9A-HJ-NPR-Z]{17}}', ['controller' => 'SearchController', 'action' => 'getVehicleProfile']);
+        $this->add('search/vehicle-profile/{vin:(?i)[0-9A-HJ-NPR-Z]{17}}', ['controller' => 'SearchController', 'action' => 'getVehicleProfile']);
         $this->add('search/history', ['controller' => 'SearchController', 'action' => 'getSearchHistory']);
         $this->add('search/export', ['controller' => 'SearchController', 'action' => 'exportSearchResults']);
         
