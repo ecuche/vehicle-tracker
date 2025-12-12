@@ -180,8 +180,8 @@ try {
     $url .= $_SERVER['REQUEST_URI'];
     $url = str_replace($_ENV['APP_URL']."/", '', $url) ?? '/';
 
-    
-    $url = filter_var($url, FILTER_SANITIZE_URL);
+    // Remove query string
+    $url = explode('?', $url)[0];
     $url = rtrim($url, '/') ?: '/';
 
     $router = new Router();

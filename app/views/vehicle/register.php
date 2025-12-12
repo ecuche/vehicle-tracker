@@ -59,9 +59,9 @@ ob_start();
                                     id="vehicle_make" name="vehicle_make" required>
                                 <option value="">Select Make</option>
                                 <?php foreach ($vehicle_makes as $make): ?>
-                                <option value="<?= $make->make; ?>" 
-                                        <?= old('vehicle_make') == $make->make ? 'selected' : ''; ?>>
-                                    <?= e($make->make); ?>
+                                <option value="<?= $make['make']; ?>" 
+                                        <?= old('vehicle_make') == $make['make'] ? 'selected' : ''; ?>>
+                                    <?= e($make['make']); ?>
                                 </option>
                                 <?php endforeach; ?>
                             </select>

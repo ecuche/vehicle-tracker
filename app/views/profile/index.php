@@ -45,6 +45,9 @@ ob_start();
             </div>
             <div class="card-body">
                 <dl class="row mb-0">
+                    <dt class="col-sm-5">Full Name:</dt>
+                    <dd class="col-sm-7"><?= e($user['name']); ?></dd>
+
                     <dt class="col-sm-5">Email:</dt>
                     <dd class="col-sm-7"><?= e($user['email']); ?></dd>
                     
@@ -62,8 +65,6 @@ ob_start();
                     <dt class="col-sm-5">Member Since:</dt>
                     <dd class="col-sm-7"><?= format_date($user['created_at'], 'M j, Y'); ?></dd>
                     
-                    <dt class="col-sm-5">Last Login:</dt>
-                    <dd class="col-sm-7"><?= format_date($user['last_login_at'], 'M j, Y'); ?></dd>
                 </dl>
             </div>
         </div>

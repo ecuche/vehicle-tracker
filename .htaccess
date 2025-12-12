@@ -1,5 +1,8 @@
 RewriteEngine On
 
+# Allow test files to be served directly
+RewriteRule ^test_.*\.php$ - [L]
+
 # If the request is not a real file or directory, send it to index.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

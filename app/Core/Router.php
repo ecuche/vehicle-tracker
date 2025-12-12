@@ -8,18 +8,57 @@ class Router {
 
     public function add($route, $params = []) {
 
-        // Escape forward slashes
+        // Manual parser to handle {var:regex} with nested braces like {17}
+        $output = '';
+        $i = 0;
+        $len = strlen($route);
+        
+        while ($i < $len) {
+            // Check if we're at the start of a {var:regex} pattern
+            if ($route[$i] === '{' && preg_match('/\{([a-zA-Z_][a-zA-Z0-9_]*):/', substr($route, $i), $m)) {
+                $varName = $m[1];
+                $i += strlen($m[0]); // Move past {varname:
+                
+                // Find the matching closing brace, counting nested braces
+                $braceCount = 1;
+                $patternStart = $i;
+                
+                while ($i < $len && $braceCount > 0) {
+                    if ($route[$i] === '{') {
+                        $braceCount++;
+                    } elseif ($route[$i] === '}') {
+                        $braceCount--;
+                    }
+                    if ($braceCount > 0) {
+                        $i++;
+                    }
+                }
+                
+                $pattern = substr($route, $patternStart, $i - $patternStart);
+                $output .= '(?P<' . $varName . '>' . $pattern . ')';
+                $i++; // Skip closing brace
+            } else {
+                // Regular character
+                $output .= $route[$i];
+                $i++;
+            }
+        }
+        $route = $output;
+
+        // Now escape forward slashes (for the URL part, not the regex)
         $route = preg_replace('/\//', '\\/', $route);
 
-        // Match {var}
+        // Match {var} - default to alphanumeric, hyphens, and underscores
         $route = preg_replace('/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/', '(?P<\1>[A-Za-z0-9\-_]+)', $route);
 
-        // Match {var:regex}
-        $route = preg_replace('/\{([a-zA-Z_][a-zA-Z0-9_]*):([^\}]+)\}/', '(?P<\1>\2)', $route);
+        // Add start/end with configurable PCRE flags (default: case-sensitive)
+        $flags = isset($params['flags']) ? $params['flags'] : '';
+        // Do not pass the internal 'flags' param to controller/action
+        if (isset($params['flags'])) {
+            unset($params['flags']);
+        }
 
-        // Add start/end + case-insensitive
-        $route = '/^' . $route . '$/i';
-
+        $route = '/^' . $route . '$/' . $flags;
         $this->routes[$route] = $params;
     }
 
@@ -130,6 +169,13 @@ class Router {
 
     // Load routes from configuration
     public function loadRoutes() {
+        /*
+            To make the regex for any route case insensitive:
+            Add 'flags' => 'i' as on of the params after controller and action.
+            OR use the this formate: {vin:(?i)[0-9A-HJ-NPR-Z]{17}}
+            OR this formate: {vin:[0-9A-HJ-NPR-Za-hj-npr-z]{17}}
+        */
+
         // Define routes
         $this->add('', ['controller' => 'AuthController', 'action' => 'login']);
         $this->add('/', ['controller' => 'AuthController', 'action' => 'login']);
@@ -172,7 +218,7 @@ class Router {
         $this->add('search', ['controller' => 'SearchController', 'action' => 'index']);
         $this->add('search/vehicle', ['controller' => 'SearchController', 'action' => 'searchVehicle']);
         $this->add('search/advanced', ['controller' => 'SearchController', 'action' => 'searchVehicleAdvanced']);
-        $this->add('search/vehicle-profile/{vin:[^/]+}', ['controller' => 'SearchController', 'action' => 'getVehicleProfile']);
+        $this->add('search/vehicle-profile/{vin:[0-9A-HJ-NPR-Z]{17}}', ['controller' => 'SearchController', 'action' => 'getVehicleProfile']);
         $this->add('search/history', ['controller' => 'SearchController', 'action' => 'getSearchHistory']);
         $this->add('search/export', ['controller' => 'SearchController', 'action' => 'exportSearchResults']);
         
@@ -181,7 +227,7 @@ class Router {
         $this->add('admin/vehicles', ['controller' => 'AdminController', 'action' => 'vehicles']);
         $this->add('admin/audit', ['controller' => 'AdminController', 'action' => 'audit']);
         $this->add('admin/search-user', ['controller' => 'AdminController', 'action' => 'searchUser']);
-        $this->add('admin/manage-user/{email:.+}', ['controller' => 'AdminController', 'action' => 'manageUser']);
+        $this->add('admin/manage-user/{email:[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}}', ['controller' => 'AdminController', 'action' => 'manageUser']);
         $this->add('admin/manage-vehicle/{vin:[^/]+}', ['controller' => 'AdminController', 'action' => 'manageVehicle']);
         $this->add('admin/user/{id:\d+}', ['controller' => 'AdminController', 'action' => 'getUserDetails']);
         $this->add('admin/user/vehicles/{email:.+}', ['controller' => 'AdminController', 'action' => 'viewUserVehicles']);

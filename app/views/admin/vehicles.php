@@ -98,6 +98,7 @@ ob_start();
                         <th>Year</th>
                         <th>Status</th>
                         <th>Registered</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -106,8 +107,8 @@ ob_start();
                         <td>
                             <div class="d-flex align-items-center">
                                 <?php if (empty([])): ?>
-                                <img src=<?= url('public/assets/images/primary-image.png') ?> 
-                                     alt="<?= e($vehicle->make); ?> <?= e($vehicle->model); ?>" 
+                                    <img src=<?= url('public/assets/images/primary-image.png') ?> 
+                                     alt="<?= e($vehicle['make']); ?> <?= e($vehicle['model']); ?>" 
                                      class="rounded me-3" 
                                      width="40" 
                                      height="40"
@@ -119,32 +120,48 @@ ob_start();
                                 </div>
                                 <?php endif; ?>
                                 <div>
-                                    <strong><?= e($vehicle->make); ?> <?= e($vehicle->model); ?></strong>
+                                    <strong><?= e($vehicle['make']); ?> <?= e($vehicle['model']); ?></strong>
                                 </div>
                             </div>
                         </td>
                         <td>
-                            <a href="<?= $_ENV['APP_URL']."/admin/manage-vehicle/" . $vehicle->vin ?>">
-                                <strong><?= e($vehicle->vin); ?></strong>
+                            <a href="<?= url('admin/manage-vehicle/'.$vehicle['vin']) ?>">
+                                <strong><?= e($vehicle['vin']); ?></strong>
                             </a>
                         </td>
                         <td>
-                            <span class="badge bg-dark"><?= e($vehicle->current_plate_number); ?></span>
+                            <span class="badge bg-dark"><?= e($vehicle['current_plate_number']); ?></span>
                         </td>
                         <td>
                             <div>
-                                <a href="<?= $_ENV['APP_URL']."/admin/manage-user/" . $vehicle->owner_email ?>">
-                                    <div><?= e($vehicle->owner_email); ?></div>
-                                    <small class="text-muted"><?= format_phone($vehicle->owner_phone); ?></small>
+                                <a href="<?= url('admin/manage-user/'.$vehicle['owner_email']) ?>">
+                                    <div><?= e($vehicle['owner_email']); ?></div>
+                                    <small class="text-muted"><?= format_phone($vehicle['owner_phone']); ?></small>
                                 </a>
                             </div>
                         </td>
-                        <td><?= e($vehicle->year); ?></td>
+                        <td><?= e($vehicle['year']); ?></td>
                         <td>
-                            <?= vehicle_status_badge($vehicle->current_status); ?>
+                            <?= vehicle_status_badge($vehicle['current_status']); ?>
                         </td>
                         <td>
-                            <small class="text-muted"><?= relative_time($vehicle->created_at); ?></small>
+                            <small class="text-muted"><?= relative_time($vehicle['created_at']); ?></small>
+                        </td>
+                         <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="<?= url('search/vehicle-profile/'.$vehicle['vin']) ?>" 
+                                   class="btn btn-outline-success border" 
+                                   title="View Details" style="font-size: 1.2rem">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </div>
+                            <div class="btn-group btn-group-sm">
+                                <a href="<?= url('admin/manage-vehicle/'.$vehicle['vin']) ?>" 
+                                   class="btn btn-outline-primary" 
+                                   title="Edit Vehicle" style="font-size: 1.2rem">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                            </div>
                         </td>
                     </tr>
                     <?php endforeach; ?>

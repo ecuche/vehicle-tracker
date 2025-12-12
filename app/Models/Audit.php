@@ -3,6 +3,7 @@ namespace App\Models;
 
 use App\Core\Database;
 use App\Core\Model;
+use PDO;
 
 class Audit extends Model {
 
@@ -82,7 +83,7 @@ class Audit extends Model {
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getTodayLogsCount() {
@@ -205,7 +206,7 @@ class Audit extends Model {
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getUserAuditLogs($user_id, $limit = 10) {
@@ -216,7 +217,7 @@ class Audit extends Model {
             LIMIT ?
         ");
         $stmt->execute([$user_id, $limit]);
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getActions() {
@@ -226,7 +227,7 @@ class Audit extends Model {
             ORDER BY action
         ");
         $stmt->execute();
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function cleanupOldLogs($days = 90) {
@@ -255,7 +256,7 @@ class Audit extends Model {
             ORDER BY created_at DESC
         ");
         $stmt->execute([$user_id]);
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
 ?>

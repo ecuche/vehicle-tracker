@@ -74,6 +74,11 @@ class SearchController extends Controller {
             exit;
         }
         $vehicle = $this->vehicle->findByVIN($vin);
+        if (!$vehicle) {
+            $this->session->setFlash('error', 'Vehicle not found');
+            $this->redirect('search');
+            exit;
+        }
         $user = $this->user->findById($vehicle['user_id']);  
         $owners = $this->transfer->getVehicleHistoryAndOwners($vehicle['id']); 
         $plates = $this->plateNumber->findAll(['vehicle_id'=>$vehicle['id']]);
@@ -81,11 +86,7 @@ class SearchController extends Controller {
         $documents = $this->vehicle->findAll(['vehicle_id'=>$vehicle['id']], 'vehicle_documents');
         $images = $this->vehicle->findAll(['vehicle_id'=>$vehicle['id']], 'vehicle_images');
        
-        if (!$vehicle) {
-            $this->session->setFlash('error', 'Vehicle not found');
-            $this->redirect('search');
-            exit;
-        }
+        
         $data = [
             'vehicle' => $vehicle,
             'user' => $user,

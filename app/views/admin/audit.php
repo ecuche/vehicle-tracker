@@ -122,54 +122,54 @@ ob_start();
                     <tr>
                         <td>
                             <small class="text-muted">
-                                <?= format_date($log->created_at, 'M j, Y'); ?><br>
-                                <?= format_date($log->created_at, 'H:i:s'); ?>
+                                <?= format_date($log['created_at'], 'M j, Y'); ?><br>
+                                <?= format_date($log['created_at'], 'H:i:s'); ?>
                             </small>
                         </td>
                         <td>
-                            <?php if ($log->user_email): ?>
+                            <?php if ($log['user_email']): ?>
                             <div>
-                                <div><?= e($log->user_email); ?></div>
-                                <small class="text-muted"><?= e($log->user_phone); ?></small>
+                                <div><?= e($log['user_email']); ?></div>
+                                <small class="text-muted"><?= e($log['user_phone']); ?></small>
                             </div>
                             <?php else: ?>
                             <span class="text-muted">System</span>
                             <?php endif; ?>
                         </td>
                         <td>
-                            <span class="badge bg-<?= getActionBadgeColor($log->action); ?>">
-                                <?= ucwords(str_replace('_', ' ', $log->action)); ?>
+                            <span class="badge bg-<?= getActionBadgeColor($log['action']); ?>">
+                                <?= ucwords(str_replace('_', ' ', $log['action'])); ?>
                             </span>
                         </td>
                         <td>
-                            <?php if ($log->table_name): ?>
-                            <code><?= e($log->table_name); ?></code>
+                            <?php if ($log['table_name']): ?>
+                            <code><?= e($log['table_name']); ?></code>
                             <?php else: ?>
                             <span class="text-muted">-</span>
                             <?php endif; ?>
                         </td>
                         <td>
-                            <?php if ($log->record_id): ?>
-                            <span class="badge bg-secondary">#<?= e($log->record_id); ?></span>
+                            <?php if ($log['record_id']): ?>
+                            <span class="badge bg-secondary">#<?= e($log['record_id']); ?></span>
                             <?php else: ?>
                             <span class="text-muted">-</span>
                             <?php endif; ?>
                         </td>
                         <td>
-                            <code><?= e($log->ip_address); ?></code>
+                            <code><?= e($log['ip_address']); ?></code>
                         </td>
                         <td>
                             <button type="button" 
                                     class="btn btn-sm btn-outline-info" 
                                     data-bs-toggle="modal" 
-                                    data-bs-target="#detailsModal<?= $log->id; ?>">
+                                    data-bs-target="#detailsModal<?= $log['id']; ?>">
                                 <i class="bi bi-info-circle"></i> Details
                             </button>
                         </td>
                     </tr>
 
                     <!-- Details Modal -->
-                    <div class="modal fade" id="detailsModal<?= $log->id; ?>" tabindex="-1">
+                    <div class="modal fade" id="detailsModal<?= $log['id']; ?>" tabindex="-1">
                         <div class="modal-dialog modal-lg">
                             <div class="modal-content">
                                 <div class="modal-header">
@@ -182,34 +182,34 @@ ob_start();
                                             <h6>Basic Information</h6>
                                             <dl class="row">
                                                 <dt class="col-sm-4">Timestamp:</dt>
-                                                <dd class="col-sm-8"><?= format_date($log->created_at, 'Y-m-d H:i:s'); ?></dd>
+                                                <dd class="col-sm-8"><?= format_date($log['created_at'], 'Y-m-d H:i:s'); ?></dd>
                                                 
                                                 <dt class="col-sm-4">User:</dt>
-                                                <dd class="col-sm-8"><?= $log->user_email ? e($log->user_email) : '<span class="text-muted">System</span>'; ?></dd>
+                                                <dd class="col-sm-8"><?= $log['user_email'] ? e($log['user_email']) : '<span class="text-muted">System</span>'; ?></dd>
                                                 
                                                 <dt class="col-sm-4">Action:</dt>
-                                                <dd class="col-sm-8"><?= ucwords(str_replace('_', ' ', $log->action)); ?></dd>
+                                                <dd class="col-sm-8"><?= ucwords(str_replace('_', ' ', $log['action'])); ?></dd>
                                                 
                                                 <dt class="col-sm-4">IP Address:</dt>
-                                                <dd class="col-sm-8"><code><?= e($log->ip_address); ?></code></dd>
+                                                <dd class="col-sm-8"><code><?= e($log['ip_address']); ?></code></dd>
                                             </dl>
                                         </div>
                                         <div class="col-md-6">
                                             <h6>Context</h6>
                                             <dl class="row">
                                                 <dt class="col-sm-4">Table:</dt>
-                                                <dd class="col-sm-8"><?= $log->table_name ? '<code>' . e($log->table_name) . '</code>' : '<span class="text-muted">-</span>'; ?></dd>
+                                                <dd class="col-sm-8"><?= $log['table_name'] ? '<code>' . e($log['table_name']) . '</code>' : '<span class="text-muted">-</span>'; ?></dd>
                                                 
                                                 <dt class="col-sm-4">Record ID:</dt>
-                                                <dd class="col-sm-8"><?= $log->record_id ? '#' . e($log->record_id) : '<span class="text-muted">-</span>'; ?></dd>
+                                                <dd class="col-sm-8"><?= $log['record_id'] ? '#' . e($log['record_id']) : '<span class="text-muted">-</span>'; ?></dd>
                                                 
                                                 <dt class="col-sm-4">User Agent:</dt>
-                                                <dd class="col-sm-8"><small class="text-muted"><?= e($log->user_agent); ?></small></dd>
+                                                <dd class="col-sm-8"><small class="text-muted"><?= e($log['user_agent']); ?></small></dd>
                                             </dl>
                                         </div>
                                     </div>
                                     
-                                    <?php if ($log->old_values || $log->new_values): ?>
+                                    <?php if ($log['old_values'] || $log['new_values']): ?>
                                     <div class="row mt-3">
                                         <div class="col-12">
                                             <h6>Changes</h6>
@@ -224,8 +224,8 @@ ob_start();
                                                     </thead>
                                                     <tbody>
                                                         <?php
-                                                        $old_values = $log->old_values ? json_decode($log->old_values, true) : [];
-                                                        $new_values = $log->new_values ? json_decode($log->new_values, true) : [];
+                                                        $old_values = $log['old_values'] ? json_decode($log['old_values'], true) : [];
+                                                        $new_values = $log['new_values'] ? json_decode($log['new_values'], true) : [];
                                                         $all_fields = array_unique(array_merge(array_keys($old_values), array_keys($new_values)));
                                                         
                                                         foreach ($all_fields as $field):
