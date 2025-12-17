@@ -7,8 +7,7 @@ class ProfileController extends Controller {
     public function __construct() {
         parent::__construct();
         if (!$this->auth->isLoggedIn()) {
-            header("Location: {$_ENV['APP_URL']}/login");
-            exit;
+            $this->redirect("login");
         }
     }
 
@@ -18,15 +17,13 @@ class ProfileController extends Controller {
         
         if (!$user) {
             $this->session->setFlash('error', 'User not found');
-            header("Location: {$_ENV['APP_URL']}/dashboard");
-            exit;
+            $this->redirect('dashboard');
         }
         
         $data = [
             'user' => $user
         ];
-        extract($data);
-        require_once 'app/Views/profile/index.php';
+        $this->view('profile/index', $data);
     }
 
     public function update() {
@@ -55,9 +52,7 @@ class ProfileController extends Controller {
                 $this->session->setFlash('errors', $errors);
             }
         }
-        
-        header("Location: {$_ENV['APP_URL']}/profile");
-        exit;
+        $this->redirect('profile');
     }
 
     public function removeProfilePicture() {
@@ -84,9 +79,9 @@ class ProfileController extends Controller {
         $user_id = $this->auth->getUserId();
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $current_password = $_POST['current_password'] ?? '';
-            $new_password = $_POST['new_password'] ?? '';
-            $confirm_password = $_POST['confirm_password'] ?? '';
+            $current_password = $this->request->post('current_password') ?? '';
+            $new_password = $this->request->post('new_password') ?? '';
+            $confirm_password = $this->request->post('confirm_password') ?? '';
             
             $this->validatePasswordChange($user_id, $current_password, $new_password, $confirm_password);
             
@@ -99,7 +94,6 @@ class ProfileController extends Controller {
             }
         }
         $this->redirect('profile');
-        exit;
     }
 
     private function validatePasswordChange($user_id, $current_password, $new_password, $confirm_password) {
@@ -120,48 +114,6 @@ class ProfileController extends Controller {
         }
     }
 
-    public function getUserProfile($identifier) {
-        if (!$this->auth->isLoggedIn()) {
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'Unauthorized']);
-            exit;
-        }
-
-        $user_role = $this->auth->getUserRole();
-        
-        // Only searcher and admin can view user profiles
-        if (!in_array($user_role, ['searcher', 'admin'])) {
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'Access denied']);
-            exit;
-        }
-
-        $user = $this->user->findByIdentifier($identifier);
-        
-        if ($user) {
-            // Get user's vehicles and contact details
-            $vehicles = $this->user->getUserVehiclesWithHistory($user['id']);
-            $plate_numbers = $this->user->getUserPlateNumbers($user['id']);
-            
-            $profile_data = [
-                'user' => [
-                    'email' => $user['email'],
-                    'phone' => $user['phone'],
-                    'nin' => $user['nin'],
-                    'role' => $user['role'],
-                    'profile_picture' => $user['profile_picture']
-                ],
-                'vehicles' => $vehicles,
-                'plate_numbers' => $plate_numbers
-            ];
-            
-            header('Content-Type: application/json');
-            echo json_encode($profile_data);
-        } else {
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'User not found']);
-        }
-        exit;
-    }
+  
 }
 ?>

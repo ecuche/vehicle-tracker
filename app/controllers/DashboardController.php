@@ -88,11 +88,11 @@ class DashboardController extends Controller {
 
     private function getAdminStats() {
         return [
-            'total_users' => $this->user->getTotalCount(),
-            'total_vehicles' => $this->vehicle->getTotalCount(),
-            'total_transfers' => $this->transfer->getTotalCount(),
-            'pending_transfers' => $this->transfer->getPendingCount(),
-            'banned_users' => $this->user->getBannedCount()
+            'total_users' => $this->user->countAll(),
+            'total_vehicles' => $this->vehicle->countAll(),
+            'total_transfers' => $this->transfer->countAll(),
+            'total_status' => $this->vehicleStatusHistory->countAll(),
+            'total_plates' => $this->plateNumber->countAll()
         ];
     }
 
@@ -106,16 +106,12 @@ class DashboardController extends Controller {
 
     public function getDashboardStats() {
         if (!$this->auth->isLoggedIn()) {
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'Unauthorized']);
-            exit;
+            $this->response->error('Unauthorised');
         }
 
         $user_id = $this->auth->getUserId();
         $user_role = $this->auth->getUserRole();
-        
         $stats = [];
-        
         switch ($user_role) {
             case 'driver':
                 $stats = [
@@ -127,10 +123,7 @@ class DashboardController extends Controller {
                 $stats = $this->getAdminStats();
                 break;
         }
-        
-        header('Content-Type: application/json');
-        echo json_encode($stats);
-        exit;
+        $this->response->success( $stats);
     }
 }
 ?>

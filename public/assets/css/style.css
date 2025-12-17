@@ -402,6 +402,12 @@ a:hover {
   border-left-color: var(--danger-color);
 }
 
+.alert-error {
+  background-color: rgba(220, 53, 69, 0.1);
+  color: #ea868f;
+  border-left-color: var(--danger-color);
+}  
+
 .alert-warning {
   background-color: rgba(255, 193, 7, 0.1);
   color: #ffda6a;

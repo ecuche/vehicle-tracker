@@ -22,40 +22,52 @@ ob_start();
 <!-- Stats Overview -->
 <div class="row mb-4">
     <div class="col-md-2">
-        <div class="card stats-card">
-            <div class="stats-number"><?= $pagination['total']; ?></div>
-            <div class="stats-label">Total Vehicles</div>
-        </div>
+        <a href="<?= url('admin/vehicles') ?>">
+            <div class="card stats-card">
+                <div class="stats-number"><?= $pagination['total']; ?></div>
+                <div class="stats-label">Total Vehicles</div>
+            </div>
+        </a>
     </div>
     <div class="col-md-2">
-        <div class="card stats-card">
-            <div class="stats-number text-success"><?= $normal_count; ?></div>
-            <div class="stats-label">Normal</div>
-        </div>
+        <a href="<?= url('admin/vehicles/normal') ?>">
+            <div class="card stats-card">
+                <div class="stats-number text-success"><?= $normal_count; ?></div>
+                <div class="stats-label">Normal</div>
+            </div>
+        </a>
     </div>
     <div class="col-md-2">
-        <div class="card stats-card">
-            <div class="stats-number text-danger"><?= $stolen_count; ?></div>
-            <div class="stats-label">Stolen</div>
-        </div>
+        <a href="<?= url('admin/vehicles/stolen') ?>">
+            <div class="card stats-card">
+                <div class="stats-number text-danger"><?= $stolen_count; ?></div>
+                <div class="stats-label">Stolen</div>
+            </div>
+        </a>
     </div>
     <div class="col-md-2">
-        <div class="card stats-card">
-            <div class="stats-number text-warning"><?= $customs_count; ?></div>
-            <div class="stats-label">No Customs</div>
-        </div>
+        <a href="<?= url('admin/vehicles/no-customs') ?>">
+            <div class="card stats-card">
+                <div class="stats-number text-warning"><?= $customs_count; ?></div>
+                <div class="stats-label">No Customs</div>
+            </div>
+        </a>
     </div>
     <div class="col-md-2">
-        <div class="card stats-card">
-            <div class="stats-number text-info"><?= $engine_count; ?></div>
-            <div class="stats-label">Changed Engine</div>
-        </div>
+        <a href="<?= url('admin/vehicles/changed-engine') ?>">
+            <div class="card stats-card">
+                <div class="stats-number text-info"><?= $engine_count; ?></div>
+                <div class="stats-label">Changed Engine</div>
+            </div>
+        </a>
     </div>
     <div class="col-md-2">
-        <div class="card stats-card">
-            <div class="stats-number text-primary"><?= $color_count; ?></div>
-            <div class="stats-label">Changed Color</div>
-        </div>
+        <a href="<?= url('admin/vehicles/changed-color') ?>">
+            <div class="card stats-card">
+                <div class="stats-number text-primary"><?= $color_count; ?></div>
+                <div class="stats-label">Changed Color</div>
+            </div>
+        </a>
     </div>
 </div>
 
@@ -130,13 +142,13 @@ ob_start();
                             </a>
                         </td>
                         <td>
-                            <span class="badge bg-dark"><?= e($vehicle['current_plate_number']); ?></span>
+                            <span class="badge bg-dark"><?= e($vehicle['plate_number']); ?></span>
                         </td>
                         <td>
                             <div>
-                                <a href="<?= url('admin/manage-user/'.$vehicle['owner_email']) ?>">
-                                    <div><?= e($vehicle['owner_email']); ?></div>
-                                    <small class="text-muted"><?= format_phone($vehicle['owner_phone']); ?></small>
+                                <a href="<?= url('admin/manage-user/'.$vehicle['email']) ?>">
+                                    <div><?= e($vehicle['email']); ?></div>
+                                    <small class="text-muted"><?= format_phone($vehicle['phone']); ?></small>
                                 </a>
                             </div>
                         </td>

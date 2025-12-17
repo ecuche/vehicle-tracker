@@ -1,25 +1,129 @@
 <?php
 namespace App\Core;
 
-
 class Router {
     private $routes = [];
     private $params = [];
+    private $namedRoutes = [];
 
-    public function add($route, $params = []) {
+    /**
+     * Add a GET route
+     */
+    public function get($route, $params = []) {
+        $this->addRoute($route, $params, 'GET');
+    }
 
-        // Manual parser to handle {var:regex} with nested braces like {17}
+    /**
+     * Add a POST route
+     */
+    public function post($route, $params = []) {
+        $this->addRoute($route, $params, 'POST');
+    }
+
+    /**
+     * Add a PUT route
+     */
+    public function put($route, $params = []) {
+        $this->addRoute($route, $params, 'PUT');
+    }
+
+    /**
+     * Add a DELETE route
+     */
+    public function delete($route, $params = []) {
+        $this->addRoute($route, $params, 'DELETE');
+    }
+
+    /**
+     * Add a PATCH route
+     */
+    public function patch($route, $params = []) {
+        $this->addRoute($route, $params, 'PATCH');
+    }
+
+    /**
+     * Add a route that matches any HTTP method
+     */
+    public function any($route, $params = []) {
+        $this->addRoute($route, $params, 'ANY');
+    }
+
+    /**
+     * Add a route with specific HTTP methods
+     */
+    public function register($methods, $route, $params = []) {
+        if (is_string($methods)) {
+            $methods = [$methods];
+        }
+        foreach ($methods as $method) {
+            $this->addRoute($route, $params, strtoupper($method));
+        }
+    }
+
+    /**
+     * Core method to add a route
+     */
+    private function addRoute($route, $params = [], $method = 'GET') {
+        // Handle array notation [Controller::class, 'method']
+        if (is_array($params) && isset($params[0]) && is_string($params[0])) {
+            $controllerClass = $params[0];
+            $action = $params[1] ?? 'index';
+            
+            // Extract controller name from class
+            $controllerName = $this->extractControllerName($controllerClass);
+            
+            $params = [
+                'controller' => $controllerName,
+                'action' => $action,
+                'class' => $controllerClass
+            ];
+        }
+
+        // Store original route for named routes
+        $originalRoute = $route;
+
+        // Parse route pattern
+        $route = $this->parseRoute($route);
+
+        // Add start/end anchors and flags
+        $flags = isset($params['flags']) ? $params['flags'] : '';
+        if (isset($params['flags'])) {
+            unset($params['flags']);
+        }
+
+        $pattern = '/^' . $route . '$/' . $flags;
+        
+        // Store route with method
+        $routeKey = $method . ':' . $pattern;
+        $this->routes[$routeKey] = $params;
+
+        // Store named route if provided
+        if (isset($params['name'])) {
+            $this->namedRoutes[$params['name']] = $originalRoute;
+        }
+    }
+
+    /**
+     * Parse route pattern to regex
+     */
+    private function parseRoute($route) {
+        // Ensure route starts with /
+        if ($route !== '/' && !empty($route) && $route[0] !== '/') {
+            $route = '/' . $route;
+        }
+
+        // Manual parser to handle {var:regex} with nested braces
         $output = '';
         $i = 0;
         $len = strlen($route);
         
         while ($i < $len) {
-            // Check if we're at the start of a {var:regex} pattern
+            // Check for {var:regex} pattern
             if ($route[$i] === '{' && preg_match('/\{([a-zA-Z_][a-zA-Z0-9_]*):/', substr($route, $i), $m)) {
                 $varName = $m[1];
-                $i += strlen($m[0]); // Move past {varname:
+                $i += strlen($m[0]);
                 
-                // Find the matching closing brace, counting nested braces
+                // Find matching closing brace
                 $braceCount = 1;
                 $patternStart = $i;
                 
@@ -36,38 +140,60 @@ class Router {
                 
                 $pattern = substr($route, $patternStart, $i - $patternStart);
                 $output .= '(?P<' . $varName . '>' . $pattern . ')';
-                $i++; // Skip closing brace
+                $i++;
             } else {
-                // Regular character
                 $output .= $route[$i];
                 $i++;
             }
         }
+        
         $route = $output;
 
-        // Now escape forward slashes (for the URL part, not the regex)
+        // Escape forward slashes
         $route = preg_replace('/\//', '\\/', $route);
 
         // Match {var} - default to alphanumeric, hyphens, and underscores
         $route = preg_replace('/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/', '(?P<\1>[A-Za-z0-9\-_]+)', $route);
 
-        // Add start/end with configurable PCRE flags (default: case-sensitive)
-        $flags = isset($params['flags']) ? $params['flags'] : '';
-        // Do not pass the internal 'flags' param to controller/action
-        if (isset($params['flags'])) {
-            unset($params['flags']);
-        }
-
-        $route = '/^' . $route . '$/' . $flags;
-        $this->routes[$route] = $params;
+        return $route;
     }
 
-    public function match($url) {
-        // Remove query string variables
-        $url = $this->removeQueryStringVariables($url);
+    /**
+     * Extract controller name from class string
+     */
+    private function extractControllerName($class) {
+        // Remove namespace
+        $parts = explode('\\', $class);
+        $className = end($parts);
+        
+        // Remove "Controller" suffix if present
+        if (substr($className, -10) === 'Controller') {
+            $className = substr($className, 0, -10);
+        }
+        
+        return $className;
+    }
 
-        foreach ($this->routes as $route => $params) {
-            if (preg_match($route, $url, $matches)) {
+    /**
+     * Match URL against routes
+     */
+    public function match($url, $method = null) {
+        $url = $this->removeQueryStringVariables($url);
+        
+        if ($method === null) {
+            $method = $_SERVER['REQUEST_METHOD'];
+        }
+        $method = strtoupper($method);
+
+        foreach ($this->routes as $routeKey => $params) {
+            list($routeMethod, $pattern) = explode(':', $routeKey, 2);
+            
+            // Check if method matches (or route accepts any method)
+            if ($routeMethod !== 'ANY' && $routeMethod !== $method) {
+                continue;
+            }
+
+            if (preg_match($pattern, $url, $matches)) {
                 foreach ($matches as $key => $match) {
                     if (is_string($key)) {
                         $params[$key] = $match;
@@ -80,38 +206,81 @@ class Router {
         return false;
     }
 
+    /**
+     * Dispatch route to controller
+     */
     public function dispatch($url) {
         $url = $this->removeQueryStringVariables($url);
+        $method = $_SERVER['REQUEST_METHOD'];
 
-        if ($this->match($url)) {
+        if ($this->match($url, $method)) {
             $controller = $this->params['controller'] ?? null;
             $action = $this->params['action'] ?? 'index';
 
-            $controller = $this->convertToStudlyCaps($controller);
-            $controller = $this->getNamespace() . $controller;
+            // Use full class if provided
+            if (isset($this->params['class'])) {
+                $controllerClass = $this->params['class'];
+            } else {
+                $controller = $this->convertToStudlyCaps($controller);
+                $controllerClass = $this->getNamespace() . $controller;
+            }
 
-            if (class_exists($controller)) {
-                $controller_object = new $controller($this->params);
+            if (class_exists($controllerClass)) {
+                $controller_object = new $controllerClass($this->params);
                 $action = $this->convertToCamelCase($action);
 
                 if (is_callable([$controller_object, $action])) {
-                    // Prepare parameters: exclude internal ones
+                    // Prepare parameters
                     $params = $this->params;
-                    unset($params['controller'], $params['action'], $params['namespace']);
+                    unset($params['controller'], $params['action'], $params['namespace'], $params['class'], $params['name']);
 
-                    // Pass all remaining route parameters
                     $controller_object->$action(...array_values($params));
                 } else {
-                    throw new \Exception("Method $action in controller $controller not found");
+                    throw new \Exception("Method $action in controller $controllerClass not found");
                 }
             } else {
-                throw new \Exception("Controller class $controller not found");
+                throw new \Exception("Controller class $controllerClass not found");
             }
         } else {
             $this->show404();
         }
     }
 
+    /**
+     * Load routes from external file
+     */
+    public function loadRoutes($file = null) {
+        if ($file === null) {
+            $file = CONFIG_PATH . '/routes.php';
+        }
+
+        if (!file_exists($file)) {
+            throw new \Exception("Routes file not found: $file");
+        }
+
+        // Make $router available in the routes file
+        $router = $this;
+        require $file;
+    }
+
+    /**
+     * Generate URL from named route
+     */
+    public function route($name, $params = []) {
+        if (!isset($this->namedRoutes[$name])) {
+            throw new \Exception("Named route not found: $name");
+        }
+
+        $route = $this->namedRoutes[$name];
+        
+        foreach ($params as $key => $value) {
+            $route = preg_replace('/\{' . $key . '(:.*?)?\}/', $value, $route);
+        }
+
+        return $route;
+    }
+
+    // Helper methods (unchanged)
     protected function convertToStudlyCaps($string) {
         return str_replace(' ', '', ucwords(str_replace('-', ' ', $string)));
     }
@@ -165,107 +334,6 @@ class Router {
         $errorController = new \App\Controllers\ErrorController();
         $errorController->serverError();
         exit;
-    }
-
-    // Load routes from configuration
-    public function loadRoutes() {
-        /*
-            To make the regex for any route case insensitive:
-            Add 'flags' => 'i' as on of the params after controller and action.
-            OR use the this formate: {vin:(?i)[0-9A-HJ-NPR-Z]{17}}
-            OR this formate: {vin:[0-9A-HJ-NPR-Za-hj-npr-z]{17}}
-        */
-
-        // Define routes
-        $this->add('', ['controller' => 'AuthController', 'action' => 'login']);
-        $this->add('/', ['controller' => 'AuthController', 'action' => 'login']);
-        $this->add('login', ['controller' => 'AuthController', 'action' => 'login']);
-        $this->add('logout', ['controller' => 'AuthController', 'action' => 'logout']);
-        $this->add('register', ['controller' => 'AuthController', 'action' => 'register']);
-        $this->add('verify-email/{token:[\da-f]+}', ['controller' => 'AuthController', 'action' => 'verifyEmail']);
-        $this->add('forgot-password', ['controller' => 'AuthController', 'action' => 'forgotPassword']);
-        $this->add('reset-password/{token:[\da-f]+}', ['controller' => 'AuthController', 'action' => 'resetPassword']);
-        
-        // Dashboard routes
-        $this->add('dashboard', ['controller' => 'DashboardController', 'action' => 'index']);
-        $this->add('dashboard/stats', ['controller' => 'DashboardController', 'action' => 'getDashboardStats']);
-        
-        // Profile routes
-        $this->add('profile', ['controller' => 'ProfileController', 'action' => 'index']);
-        $this->add('profile/update', ['controller' => 'ProfileController', 'action' => 'update']);
-        $this->add('profile/remove-picture', ['controller' => 'ProfileController', 'action' => 'removeProfilePicture']);
-        $this->add('profile/change-password', ['controller' => 'ProfileController', 'action' => 'changePassword']);
-        $this->add('profile/user/{identifier:.+}', ['controller' => 'ProfileController', 'action' => 'getUserProfile']);
-        
-        // Vehicle routes
-        $this->add('vehicles', ['controller' => 'VehicleController', 'action' => 'index']);
-        $this->add('vehicles/register', ['controller' => 'VehicleController', 'action' => 'register']);
-        $this->add('vehicles/transfer', ['controller' => 'VehicleController', 'action' => 'transfer']);
-        $this->add('vehicles/transfer/{vin:[^/]+}', ['controller' => 'VehicleController', 'action' => 'transferVehicle']);
-        $this->add('vehicles/handle-transfer', ['controller' => 'VehicleController', 'action' => 'handleTransfer']);
-        $this->add('vehicles/assign-plate', ['controller' => 'VehicleController', 'action' => 'assignPlate']);
-        $this->add('vehicles/view/{vin:[^/]+}', ['controller' => 'VehicleController', 'action' => 'viewVehicle']);
-        $this->add('vehicles/history/{vin:[^/]+}', ['controller' => 'VehicleController', 'action' => 'viewVehicleHistory']);
-        $this->add('vehicles/search-user', ['controller' => 'VehicleController', 'action' => 'searchUser']);
-        $this->add('vehicles/view/ownership-history/{vin:[^/]+}', ['controller' => 'VehicleController', 'action' => 'viewOwnershipHistory']);
-        $this->add('vehicles/view/status-history/{vin:[^/]+}', ['controller' => 'VehicleController', 'action' => 'viewStatusHistory']);
-        $this->add('vehicles/completed-transfers', ['controller' => 'VehicleController', 'action' => 'completedTransfers']);
-        $this->add('vehicles/incoming-transfers', ['controller' => 'VehicleController', 'action' => 'IncomingTransfers']);
-        $this->add('vehicles/outgoing-transfers', ['controller' => 'VehicleController', 'action' => 'outgoingTransfers']);
-        $this->add('vehicles/pending-transfer/{vin:[^/]+}', ['controller' => 'VehicleController', 'action' => 'pendingTransfers']);
-        
-        // Search routes
-        $this->add('search', ['controller' => 'SearchController', 'action' => 'index']);
-        $this->add('search/vehicle', ['controller' => 'SearchController', 'action' => 'searchVehicle']);
-        $this->add('search/advanced', ['controller' => 'SearchController', 'action' => 'searchVehicleAdvanced']);
-        $this->add('search/vehicle-profile/{vin:(?i)[0-9A-HJ-NPR-Z]{17}}', ['controller' => 'SearchController', 'action' => 'getVehicleProfile']);
-        $this->add('search/history', ['controller' => 'SearchController', 'action' => 'getSearchHistory']);
-        $this->add('search/export', ['controller' => 'SearchController', 'action' => 'exportSearchResults']);
-        
-        // Admin routes
-        $this->add('admin/users', ['controller' => 'AdminController', 'action' => 'users']);
-        $this->add('admin/vehicles', ['controller' => 'AdminController', 'action' => 'vehicles']);
-        $this->add('admin/audit', ['controller' => 'AdminController', 'action' => 'audit']);
-        $this->add('admin/search-user', ['controller' => 'AdminController', 'action' => 'searchUser']);
-        $this->add('admin/manage-user/{email:[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}}', ['controller' => 'AdminController', 'action' => 'manageUser']);
-        $this->add('admin/manage-vehicle/{vin:[^/]+}', ['controller' => 'AdminController', 'action' => 'manageVehicle']);
-        $this->add('admin/user/{id:\d+}', ['controller' => 'AdminController', 'action' => 'getUserDetails']);
-        $this->add('admin/user/vehicles/{email:.+}', ['controller' => 'AdminController', 'action' => 'viewUserVehicles']);
-        $this->add('admin/vehicle/users/{vin:[^/]+}', ['controller' => 'AdminController', 'action' => 'viewVehicleUsers']);
-        $this->add('admin/update-role', ['controller' => 'AdminController', 'action' => 'updateUserRole']);
-        $this->add('admin/toggle-ban', ['controller' => 'AdminController', 'action' => 'toggleUserBan']);
-        $this->add('admin/export-audit', ['controller' => 'AdminController', 'action' => 'exportAuditToCSV']);
-        $this->add('admin/stats', ['controller' => 'AdminController', 'action' => 'getStats']);
-        $this->add('admin/audit/user/{email:.+}', ['controller' => 'AdminController', 'action' => 'getUserAuditLogs']);
-        
-        // Error routes
-        $this->add('errors/404', ['controller' => 'ErrorController', 'action' => 'notFound']);
-        $this->add('errors/403', ['controller' => 'ErrorController', 'action' => 'forbidden']);
-        $this->add('errors/500', ['controller' => 'ErrorController', 'action' => 'serverError']);
-        
-        // API routes for AJAX calls
-        $this->add('api/vehicle/search', ['controller' => 'SearchController', 'action' => 'searchVehicle']);
-        $this->add('api/search/vehicle', ['controller' => 'SearchController', 'action' => 'searchVehicle']);
-        $this->add('api/search/user', ['controller' => 'SearchController', 'action' => 'searchUser']);
-        $this->add('api/user/search', ['controller' => 'VehicleController', 'action' => 'searchUser']);
-        $this->add('api/profile/user/{identifier:.+}', ['controller' => 'ProfileController', 'action' => 'getUserProfile']);
-        $this->add('api/vehicle/get-models', ['controller' => 'VehicleController', 'action' => 'getVehicleModels']);
-        $this->add('api/vehicle/change-current-plate', ['controller' => 'ApiController', 'action' => 'changeCurrentPlate']);
-        $this->add('api/vehicle/transfer-ownership/{vin:[^/]+}', ['controller' => 'vehicleController', 'action' => 'handleTransfer']);
-        $this->add('api/vehicle/assign-new-plate/{vin:[^/]+}', ['controller' => 'ApiController', 'action' => 'assignNewPlate']);
-        $this->add('api/check-vin', ['controller' => 'VehicleController', 'action' => 'checkVIN']);
-        $this->add('api/vehicles/details/{vin:[^/]+}', ['controller' => 'VehicleController', 'action' => 'getVehicleDetails']);
-        $this->add('api/vehicles/accept-transfer/{vin:[^/]+}', ['controller' => 'ApiController', 'action' => 'acceptTransfer']);
-        $this->add('api/vehicles/reject-transfer/{vin:[^/]+}', ['controller' => 'ApiController', 'action' => 'rejectTransfer']);
-
-
-        // Admin API
-        $this->add('api/admin/update/user', ['controller' => 'AdminController', 'action' => 'updateUser']);
-        $this->add('api/admin/delete/user', ['controller' => 'AdminController', 'action' => 'deleteUser']);
-        $this->add('api/admin/update/vehicle', ['controller' => 'ApiController', 'action' => 'updateVehicle']);
-        $this->add('api/admin/get-user', ['controller' => 'ApiController', 'action' => 'getUser']);
-        $this->add('api/admin/delete/vehicle', ['controller' => 'ApiController', 'action' => 'deleteVehicle']);
-
     }
 }
 ?>

@@ -3,16 +3,16 @@ $title = "Login";
 $subtitle = "Sign in to your account";
 $footer_links = '
     <p class="mb-2">
-        Don\'t have an account? <a href="'.$_ENV['APP_URL'].'/register" class="text-decoration-none">Create one here</a>
+        Don\'t have an account? <a href="'.url('register').'" class="text-decoration-none">Create one here</a>
     </p>
     <p class="mb-0">
-        <a href="'.$_ENV['APP_URL'].'/forgot-password" class="text-decoration-none">Forgot your password?</a>
+        <a href="'.url('forgot-password').'" class="text-decoration-none">Forgot your password?</a>
     </p>
 ';
 
 ob_start();
 ?>
-<form action="<?= $_ENV['APP_URL'] ?>/login" method="POST" class="auth-form">
+<form action="<?= url('login') ?>" method="POST" class="auth-form">
     <?php csrf_field(); ?>
     
     <div class="mb-3">
@@ -40,11 +40,6 @@ ob_start();
         <?php if (has_error('password')): ?>
         <div class="invalid-feedback"><?= get_error('password'); ?></div>
         <?php endif; ?>
-    </div>
-
-    <div class="mb-3 form-check">
-        <input type="checkbox" class="form-check-input" id="remember" name="remember">
-        <label class="form-check-label" for="remember">Remember me</label>
     </div>
 
     <button type="submit" class="btn btn-primary w-100 mb-3">

@@ -5,40 +5,28 @@ ob_start();
 ?>
 <!-- Admin Stats Overview -->
 <div class="row mb-4">
-    <div class="col-md-2">
+    <div class="col-md-3">
         <div class="card stats-card">
-            <div class="stats-number" id="totalUsers"><?= $stats['total_users'] ?? 0; ?></div>
+            <div class="stats-number text-success" id="totalUsers"><?= $stats['total_users'] ?? 0; ?></div>
             <div class="stats-label">Total Users</div>
         </div>
     </div>
-    <div class="col-md-2">
+    <div class="col-md-3">
         <div class="card stats-card">
-            <div class="stats-number" id="totalVehicles"><?= $stats['total_vehicles'] ?? 0; ?></div>
+            <div class="stats-number text-info" id="totalVehicles"><?= $stats['total_vehicles'] ?? 0; ?></div>
             <div class="stats-label">Total Vehicles</div>
         </div>
     </div>
-    <div class="col-md-2">
+    <div class="col-md-3">
         <div class="card stats-card">
-            <div class="stats-number" id="totalTransfers"><?= $stats['total_transfers'] ?? 0; ?></div>
+            <div class="stats-number text-danger" id="totalTransfers"><?= $stats['total_transfers'] ?? 0; ?></div>
             <div class="stats-label">Total Transfers</div>
         </div>
     </div>
-    <div class="col-md-2">
+    <div class="col-md-3">
         <div class="card stats-card">
-            <div class="stats-number text-warning" id="pendingTransfers"><?= $stats['pending_transfers'] ?? 0; ?></div>
-            <div class="stats-label">Pending Transfers</div>
-        </div>
-    </div>
-    <div class="col-md-2">
-        <div class="card stats-card">
-            <div class="stats-number text-danger" id="bannedUsers"><?= $stats['banned_users'] ?? 0; ?></div>
-            <div class="stats-label">Banned Users</div>
-        </div>
-    </div>
-    <div class="col-md-2">
-        <div class="card stats-card">
-            <div class="stats-number text-info" id="todayRegistrations"><?= $today_registrations ?? 0; ?></div>
-            <div class="stats-label">Today's Registrations</div>
+            <div class="stats-number text-warning" id="pendingTransfers"><?= $stats['total_status'] ?? 0; ?></div>
+            <div class="stats-label">Total Status Change </div>
         </div>
     </div>
 </div>
@@ -232,172 +220,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 60000);
 });
 
-function initializeCharts() {
-    // Vehicle Registrations Chart
-    const registrationsCtx = document.getElementById('registrationsChart').getContext('2d');
-    const registrationsChart = new Chart(registrationsCtx, {
-        type: 'line',
-        data: {
-            labels: <?= json_encode(array_column($monthly_data['vehicles_registered'] ?? [], 'month')); ?>,
-            datasets: [{
-                label: 'Vehicle Registrations',
-                data: <?= json_encode(array_column($monthly_data['vehicles_registered'] ?? [], 'count')); ?>,
-                borderColor: '#0d6efd',
-                backgroundColor: 'rgba(13, 110, 253, 0.1)',
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
-                    }
-                }
-            }
-        }
-    });
-
-    // Transfers Chart
-    const transfersCtx = document.getElementById('transfersChart').getContext('2d');
-    const transfersChart = new Chart(transfersCtx, {
-        type: 'bar',
-        data: {
-            labels: <?= json_encode(array_column($monthly_data['transfers_completed'] ?? [], 'month')); ?>,
-            datasets: [{
-                label: 'Vehicle Transfers',
-                data: <?= json_encode(array_column($monthly_data['transfers_completed'] ?? [], 'count')); ?>,
-                backgroundColor: '#198754',
-                borderColor: '#198754',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
-                    }
-                }
-            }
-        }
-    });
-}
-
-function loadSystemStatus() {
-    Ajax.getAdminStats()
-        .then(stats => {
-            // Update stats cards
-            document.getElementById('totalUsers').textContent = stats.total_users || 0;
-            document.getElementById('totalVehicles').textContent = stats.total_vehicles || 0;
-            document.getElementById('totalTransfers').textContent = stats.total_transfers || 0;
-            document.getElementById('pendingTransfers').textContent = stats.pending_transfers || 0;
-            document.getElementById('bannedUsers').textContent = stats.banned_users || 0;
-            
-            // Update last updated time
-            document.getElementById('lastUpdated').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
-        })
-        .catch(error => {
-            console.error('Failed to load system status:', error);
-        });
-}
-
-function loadSystemAlerts() {
-    const alertsContainer = document.getElementById('systemAlerts');
-    alertsContainer.innerHTML = `
-        <div class="text-center py-2">
-            <div class="loading-spinner"></div>
-            <p class="small text-muted mt-2">Loading alerts...</p>
-        </div>
-    `;
-
-    // Simulate loading system alerts
-    setTimeout(() => {
-        const alerts = [
-            // This would typically come from an API
-            // For now, we'll show static alerts or none
-        ];
-
-        if (alerts.length === 0) {
-            alertsContainer.innerHTML = `
-                <div class="alert alert-success">
-                    <i class="bi bi-check-circle"></i>
-                    <strong>All systems operational</strong><br>
-                    <small>No critical issues detected</small>
-                </div>
-            `;
-        } else {
-            let alertsHtml = '';
-            alerts.forEach(alert => {
-                alertsHtml += `
-                    <div class="alert alert-${alert.type}">
-                        <i class="bi ${alert.icon}"></i>
-                        <strong>${alert.title}</strong><br>
-                        <small>${alert.message}</small>
-                    </div>
-                `;
-            });
-            alertsContainer.innerHTML = alertsHtml;
-        }
-    }, 1000);
-}
-
-function updateStats() {
-    // This function would update the charts and stats with fresh data
-    console.log('Updating admin dashboard stats...');
-    
-    // In a real implementation, you would:
-    // 1. Fetch new data from the API
-    // 2. Update the charts with new data
-    // 3. Refresh any real-time statistics
-}
-
-// Export function for generating reports
-function generateReport(type) {
-    let endpoint = '';
-    let filename = '';
-    
-    switch(type) {
-        case 'users':
-            endpoint = '/admin/export-users';
-            filename = 'users_report.csv';
-            break;
-        case 'vehicles':
-            endpoint = '/admin/export-vehicles';
-            filename = 'vehicles_report.csv';
-            break;
-        case 'audit':
-            endpoint = '/admin/export-audit';
-            filename = 'audit_report.csv';
-            break;
-        default:
-            App.showToast('Invalid report type', 'error');
-            return;
-    }
-    
-    App.showToast('Generating report...', 'info');
-    
-    // This would typically call an API endpoint to generate the report
-    setTimeout(() => {
-        App.showToast('Report generated successfully', 'success');
-        // In a real implementation, you would download the file here
-    }, 2000);
-}
 </script>
 <?php
 $scripts = ob_get_clean();

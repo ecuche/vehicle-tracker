@@ -28,7 +28,7 @@ ob_start();
     <div class="col-md-3">
         <div class="card stats-card">
             <div class="stats-number text-primary"><?= $today_logs; ?></div>
-            <div class="stats-label">Today\'s Logs</div>
+            <div class="stats-label">Today's Logs</div>
         </div>
     </div>
     <div class="col-md-3">
@@ -65,14 +65,6 @@ ob_start();
                     </button>
                     <button type="button" class="btn btn-outline-secondary" onclick="clearDateFilter()">
                         Clear
-                    </button>
-                </div>
-            </div>
-            <div class="col-md-3 text-end">
-                <label class="form-label">&nbsp;</label>
-                <div>
-                    <button type="button" class="btn btn-success" onclick="exportAudit()">
-                        <i class="bi bi-download"></i> Export CSV
                     </button>
                 </div>
             </div>

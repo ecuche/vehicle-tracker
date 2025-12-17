@@ -155,7 +155,7 @@ abstract class Model {
         return $stmt->execute(array_merge(array_values($data), array_values($where)));
     }
 
-    public function updateById($data, $id, $table = null) {
+    public function updateById(array $data, int $id, string|null $table = null) {
         $table ??= $this->getTable();
         $setClause = implode(", ", array_map(fn($col) => "$col = ?", array_keys($data)));
         $stmt = $this->db->prepare("UPDATE $table SET $setClause WHERE id = ? AND deleted_at IS NULL");
@@ -921,28 +921,29 @@ abstract class Model {
         return $stmt->execute();
     }
 
-    public function getbyIdPagination($id, $limit, $offset = 0, $table = null) {
+   public function findPagination(array $where, $limit = 10, $offset = 0, $table = null) {
         $table ??= $this->getTable();
-        $stmt = $this->db->prepare("SELECT * FROM $table WHERE id = ? AND deleted_at IS NULL LIMIT ? OFFSET ?");
-        $stmt->execute([$id, $limit, $offset]);
+        $whereClause = implode(" AND ", array_map(fn($col) => "$col = ?", array_keys($where)));
+        $stmt = $this->db->prepare("SELECT * FROM $table WHERE $whereClause AND deleted_at IS NULL LIMIT ? OFFSET ?");
+        $stmt->execute([...array_values($where), (int)$limit, (int)$offset]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function hardGetbyIdPagination($id, $limit, $offset = 0, $table = null) {
+    public function hardFindPagination(array $where, $limit = 10, $offset = 0, $table = null) {
         $table ??= $this->getTable();
-        $stmt = $this->db->prepare("SELECT * FROM $table WHERE id = ? LIMIT ? OFFSET ?");
-        $stmt->execute([$id, $limit, $offset]);
+        $whereClause = implode(" AND ", array_map(fn($col) => "$col = ?", array_keys($where)));
+        $stmt = $this->db->prepare("SELECT * FROM $table WHERE $whereClause LIMIT ? OFFSET ?");
+        $stmt->execute([...array_values($where), (int)$limit, (int)$offset]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-
-    public function getAllPagination($limit, $offset = 0, $table = null) {
+    public function getAllPagination($limit = 10, $offset = 0, $table = null) {
         $table ??= $this->getTable();
         $stmt = $this->db->prepare("SELECT * FROM $table WHERE deleted_at IS NULL LIMIT ? OFFSET ?");
         $stmt->execute([$limit, $offset]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function hardGetAllPagination($limit, $offset = 0, $table = null) {
+    public function hardGetAllPagination($limit = 10, $offset = 0, $table = null) {
         $table ??= $this->getTable();
         $stmt = $this->db->prepare("SELECT * FROM $table LIMIT ? OFFSET ?");
         $stmt->execute([$limit, $offset]);

@@ -343,26 +343,26 @@ ob_start();
                         <div class="list-group-item d-flex justify-content-between align-items-center px-0">
                             <span>Current Owner</span>
                             <span class="text-end">
-                                <strong><?= e($owner['name'] ?? 'Unknown'); ?></strong><br>
-                                <small class="text-muted"><?= e($owner['email'] ?? 'N/A'); ?></small>
+                                <strong><?= e($stats['owner']['name'] ?? 'Unknown'); ?></strong><br>
+                                <small class="text-muted"><?= e($stats['owner']['email'] ?? 'N/A'); ?></small>
                             </span>
                         </div>
                         <div class="list-group-item d-flex justify-content-between align-items-center px-0">
                             <span>Plate Numbers</span>
                             <span class="badge bg-primary rounded-pill">
-                                <?= $vehicle_stats['plate_count'] ?? 0; ?>
+                                <?= $stats['plates'] ?? 0; ?>
                             </span>
                         </div>
                         <div class="list-group-item d-flex justify-content-between align-items-center px-0">
                             <span>Ownership Transfers</span>
                             <span class="badge bg-info rounded-pill">
-                                <?= $vehicle_stats['transfer_count'] ?? 0; ?>
+                                <?= $stats['transfers'] ?? 0; ?>
                             </span>
                         </div>
                         <div class="list-group-item d-flex justify-content-between align-items-center px-0">
                             <span>Status Changes</span>
                             <span class="badge bg-warning rounded-pill">
-                                <?= $vehicle_stats['status_change_count'] ?? 0; ?>
+                                <?= $stats['status'] ?? 0; ?>
                             </span>
                         </div>
                         <div class="list-group-item d-flex justify-content-between align-items-center px-0">

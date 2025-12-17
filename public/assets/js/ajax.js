@@ -115,7 +115,6 @@ class AjaxHandler {
             if (data && data.success === false) {
                 throw new Error(data.message || 'Request failed');
             }
-            
             return data;
         } else {
             return await response.text();
@@ -222,7 +221,7 @@ class AjaxHandler {
         return await this.request('/api/search/vehicle', {
             term: searchTerm,
             type: type
-        }, 'GET');
+        }, 'POST');
     }
 
     /**

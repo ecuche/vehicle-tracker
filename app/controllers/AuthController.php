@@ -9,22 +9,23 @@ class AuthController extends Controller{
        parent::__construct();
     }
 
+    public function showRegister(){
+         $this->response->authRedirect();
+        $this->view('auth/register');
+    }
+
     public function register() {
         // Check if user is already logged in
-        if ($this->auth->isLoggedIn()) {
-            header("Location: {$_ENV['APP_URL']}/dashboard");
-            exit;
-        }
-
+        $this->response->authRedirect();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = [
-                'name' => ucwords(trim($_POST['name'] ?? '')),
-                'email' => trim($_POST['email'] ?? ''),
-                'phone' => preg_replace('/\D/', '', trim($_POST['phone'])),
-                'nin' => trim($_POST['nin'] ?? ''),
-                'password' => $_POST['password'] ?? '',
-                'password_confirm' => $_POST['password_confirm'] ?? '',
-                'role' => in_array($_POST['role'] ?? '', ['driver', 'searcher']) ? $_POST['role'] : 'searcher',
+                'name' => ucwords(trim($this->request->post('name') ?? '')),
+                'email' => trim($this->request->post('email') ?? ''),
+                'phone' => preg_replace('/\D/', '', trim($this->request->post('phone'))),
+                'nin' => trim($this->request->post('nin') ?? ''),
+                'password' => $this->request->post('password') ?? '',
+                'password_confirm' => $this->request->post('password_confirm') ?? '',
+                'role' => in_array($this->request->post('role') ?? '', ['driver', 'searcher']) ? $this->request->post('role') : 'searcher',
                 'verification_token' => bin2hex(random_bytes(32))
             ];
             $this->session->clearErrors();
@@ -41,7 +42,7 @@ class AuthController extends Controller{
                     $this->session->clearErrors();
                     $this->session->clearFormData();
                     $this->session->setFlash('success', 'Registration successful. Please check your email for verification.');
-                    header("Location: {$_ENV['APP_URL']}/login");
+                    $this->redirect('login');
                     exit;
                 } else {
                     $errors[] = 'Registration failed. Please try again.';
@@ -51,7 +52,7 @@ class AuthController extends Controller{
                 $this->session->setFormData($key, $value);
             }
         }
-        require_once 'app/Views/auth/register.php';
+        $this->view('auth/register');
     }
 
     private function validateRegistration($data) {
@@ -93,21 +94,22 @@ class AuthController extends Controller{
         }
     }
 
+    public function showLogin(){
+        $this->response->authRedirect();
+        $this->view('auth/login');
+    }
+
     public function login() {
-        if ($this->auth->isLoggedIn()) {
-            header("Location: {$_ENV['APP_URL']}/dashboard");
-            exit;
-        }
+        $this->response->authRedirect();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $email = trim($_POST['email'] ?? '');
-            $password = $_POST['password'] ?? '';
-
+            $email = trim($this->request->post('email') ?? '');
+            $password = $this->request->post('password') ?? '';
            
             // Rate limiting check
             if ($this->auth->isRateLimited($email)) {
                 $this->session->setFlash('error', 'Too many login attempts. Please try again in 15 minutes.');
-                header("Location: {$_ENV['APP_URL']}/login");
+                $this->redirect("login");
                 exit;
             }            
             $user = $this->user->findByEmail($email);            
@@ -115,7 +117,7 @@ class AuthController extends Controller{
                 if ($user['email_verified']) {
                     if ($user['is_banned']) {
                         $this->session->setFlash('error', 'Your account has been banned. Please contact administrator.');
-                        header("Location: {$_ENV['APP_URL']}/login");
+                        $this->redirect("login");
                         exit;
                     }
 
@@ -124,7 +126,7 @@ class AuthController extends Controller{
                     // Reset rate limiting
                     $this->auth->resetRateLimit($email);
                     
-                    header("Location: {$_ENV['APP_URL']}/dashboard");
+                    $this->redirect('dashboard');
                     exit;
                 } else {
             
@@ -136,12 +138,12 @@ class AuthController extends Controller{
                 $this->session->setFlash('error', 'Invalid credentials');
             }
         }        
-        require_once 'app/Views/auth/login.php';
+        $this->view('auth/login');
     }
 
     public function logout() {
         $this->auth->logout();
-        header("Location: {$_ENV['APP_URL']}/login");
+        $this->redirect('login');
         exit;
     }
 
@@ -154,41 +156,59 @@ class AuthController extends Controller{
         $this->redirect('login');
     }
 
+
+    public function showForgotPassword () {
+        $this->response->authRedirect();
+        $this->view("auth/forgot-password");
+    }
+
+
     public function forgotPassword() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $email = trim($_POST['email'] ?? '');
+            $email = $this->request->post('email');
             $user = $this->user->findByEmail($email);
             
             if ($user) {
-                $reset_token = bin2hex(random_bytes(32));
-                $expires_at = date('Y-m-d H:i:s', strtotime('+1 hour'));
+                do {
+                    $reset_token = bin2hex(random_bytes(32));
+                } while ($this->user->countRow(['token'=> $reset_token], 'password_resets'));
                 
-                if ($this->user->createPasswordReset($user['id'], $reset_token, $expires_at)) {
+                if ($this->user->createPasswordReset($user['id'], $reset_token)) {
                     sendPasswordResetEmail($email, $reset_token);
                 }
             }
-            
             // Always show success message for security
             $this->session->setFlash('success', 'If the email exists, a password reset link has been sent.');
-            header("Location: {$_ENV['APP_URL']}/login");
-            exit;
+            $this->redirect("login");   
         }
-        
-        require_once 'app/Views/auth/forgot_password.php';
+        $this->response->redirect("forgot-password");
     }
+
+    public function showResetPassword ($token) {
+        $this->response->authRedirect();
+        $reset_request = $this->user->findPasswordReset($token);
+        if (!$reset_request || strtotime($reset_request['expires_at']) < time()) {
+            $this->session->setFlash('error', 'Invalid or expired reset token.');
+            $this->redirect("login");
+        }
+        $data = [
+            "token"=> $token
+        ];
+        $this->view("auth/reset-password", $data);
+    }
+
 
     public function resetPassword($token) {
         $reset_request = $this->user->findPasswordReset($token);
-        
-        if (!$reset_request || strtotime($reset_request->expires_at) < time()) {
+       
+        if (!$reset_request || strtotime($reset_request['expires_at']) < time()) {
             $this->session->setFlash('error', 'Invalid or expired reset token.');
-            header("Location: {$_ENV['APP_URL']}/login");
-            exit;
+            $this->redirect("login");
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $password = $_POST['password'] ?? '';
-            $password_confirm = $_POST['password_confirm'] ?? '';
+            $password = $this->request->post('password') ?? '';
+            $password_confirm = $this->request->post('password_confirm') ?? '';
             
             $errors = [];
             
@@ -201,10 +221,10 @@ class AuthController extends Controller{
             }
             
             if (empty($errors)) {
-                if ($this->user->updatePassword($reset_request->user_id, $password)) {
+                if ($this->user->updatePassword($reset_request['user_id'], $password)) {
                     $this->user->deletePasswordReset($token);
                     $this->session->setFlash('success', 'Password reset successfully. You can now login.');
-                    header("Location: {$_ENV['APP_URL']}/login");
+                    $this->redirect("login");
                     exit;
                 } else {
                     $errors[] = 'Password reset failed. Please try again.';
@@ -213,7 +233,7 @@ class AuthController extends Controller{
             
             $this->session->setFlash('errors', $errors);
         }
-        require_once 'app/Views/auth/reset_password.php';
+        $this->response->redirect('auth/reset_password', ['token'=> $token]);
     }
 }
 ?>

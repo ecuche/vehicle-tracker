@@ -48,7 +48,7 @@ ob_start();
         <!-- Edit Form -->
         <div class="col-lg-8">
             <div class="card">
-                <div class="card-header">
+                <div class="card-header bg-dark">
                     <h5 class="card-title mb-0">
                         <i class="bi bi-pencil-square me-2"></i>User Information
                     </h5>
@@ -219,7 +219,7 @@ ob_start();
         <div class="col-lg-4">
             <!-- User Summary -->
             <div class="card mb-4">
-                <div class="card-header">
+                <div class="card-header bg-dark">
                     <h5 class="card-title mb-0">
                         <i class="bi bi-person-badge me-2"></i>User Summary
                     </h5>
@@ -239,21 +239,21 @@ ob_start();
 
                     <div class="list-group list-group-flush">
                         <div class="list-group-item d-flex justify-content-between align-items-center px-0">
-                            <span>Vehicles Owned</span>
+                            <span>Vehicles</span>
                             <span class="badge bg-primary rounded-pill" id="vehiclesCount">
-                                <?= $user_stats['vehicles_owned'] ?? 0; ?>
+                                <?= $stats['current'] ?? 0; ?>
                             </span>
                         </div>
                         <div class="list-group-item d-flex justify-content-between align-items-center px-0">
                             <span>Vehicles Sold</span>
                             <span class="badge bg-secondary rounded-pill" id="soldCount">
-                                <?= $user_stats['vehicles_sold'] ?? 0; ?>
+                                <?= $stats['sold'] ?? 0; ?>
                             </span>
                         </div>
                         <div class="list-group-item d-flex justify-content-between align-items-center px-0">
-                            <span>Transfers Made</span>
+                            <span>Purchase</span>
                             <span class="badge bg-info rounded-pill" id="transfersCount">
-                                <?= $user_stats['transfers_made'] ?? 0; ?>
+                                <?= $stats['bought'] ?? 0; ?>
                             </span>
                         </div>
                         <div class="list-group-item d-flex justify-content-between align-items-center px-0">
@@ -268,7 +268,7 @@ ob_start();
 
             <!-- Quick Actions -->
             <div class="card mb-4">
-                <div class="card-header">
+                <div class="card-header bg-dark">
                     <h5 class="card-title mb-0">
                         <i class="bi bi-lightning me-2"></i>Quick Actions
                     </h5>
@@ -283,12 +283,16 @@ ob_start();
                            class="btn btn-outline-info text-start" >
                             <i class="bi bi-clock-history me-2"></i> View Activity
                         </a>
-                        <?php if (!$user['email_verified_at']): ?>
+                        <?php if (!$user['email_verified']): ?>
                         <button type="button" class="btn btn-outline-warning text-start" 
                                 onclick="verifyUserEmail()">
                             <i class="bi bi-envelope-check me-2"></i> Verify Email
                         </button>
                         <?php endif; ?>
+                        <button type="button" class="btn btn-outline-success text-start" 
+                                onclick="sendVerificationEmail()">
+                            <i class="bi bi-send-fill me-2"></i> Send Verification Email
+                        </button>
                         <button type="button" class="btn btn-outline-secondary text-start" 
                                 onclick="sendPasswordReset()">
                             <i class="bi bi-key me-2"></i> Send Password Reset
@@ -495,58 +499,19 @@ function deleteUser() {
     });
 }
 
-function banUser() {
-    if (confirm('Are you sure you want to ban this user? They will not be able to access their account.')) {
-        fetch(`/admin/users/<?= $user['id']; ?>/ban`, {
-            method: 'POST'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                App.showToast('User banned successfully!', 'success');
-                window.location.reload();
-            } else {
-                throw new Error(data.error || 'Ban failed');
-            }
-        })
-        .catch(error => {
-            console.error('Ban error:', error);
-            App.showToast(error.message, 'error');
-        });
-    }
-}
-
-function unbanUser() {
-    if (confirm('Are you sure you want to unban this user? They will be able to access their account again.')) {
-        fetch(`/admin/users/<?= $user['id']; ?>/unban`, {
-            method: 'POST'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                App.showToast('User unbanned successfully!', 'success');
-                window.location.reload();
-            } else {
-                throw new Error(data.error || 'Unban failed');
-            }
-        })
-        .catch(error => {
-            console.error('Unban error:', error);
-            App.showToast(error.message, 'error');
-        });
-    }
-}
 
 function verifyUserEmail() {
     if (confirm('Manually verify this user\'s email address?')) {
-        fetch(`/admin/users/<?= $user['id']; ?>/verify-email`, {
+        fetch(appUrl + `/api/admin/verify-email/<?= $user['email']; ?>`, {
             method: 'POST'
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 App.showToast('Email verified successfully!', 'success');
-                window.location.reload();
+                setTimeout(function() {
+                        window.location.reload();
+                    }, 2000)
             } else {
                 throw new Error(data.error || 'Verification failed');
             }
@@ -560,19 +525,46 @@ function verifyUserEmail() {
 
 function sendPasswordReset() {
     if (confirm('Send password reset email to this user?')) {
-        fetch(`/admin/users/<?= $user['id']; ?>/send-password-reset`, {
+        fetch(appUrl + `/api/admin/send-password-reset/<?= $user['email']; ?>`, {
             method: 'POST'
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 App.showToast('Password reset email sent!', 'success');
+                 setTimeout(function() {
+                        window.location.reload();
+                    }, 2000)
             } else {
                 throw new Error(data.error || 'Failed to send reset email');
             }
         })
         .catch(error => {
             console.error('Password reset error:', error);
+            App.showToast(error.message, 'error');
+        });
+    }
+}
+
+
+function sendVerificationEmail() {
+    if (confirm('Send verification email to this user?')) {
+        fetch(appUrl + `/api/admin/send-verification/<?= $user['email']; ?>`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                App.showToast('Verification email sent!', 'success');
+                setTimeout(function() {
+                        window.location.reload();
+                    }, 2000)
+            } else {
+                throw new Error(data.error || 'Failed to send verification email');
+            }
+        })
+        .catch(error => {
+            console.error('verification error:', error);
             App.showToast(error.message, 'error');
         });
     }

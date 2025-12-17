@@ -170,8 +170,6 @@ function initializeSearch() {
         performQuickSearch();
     });
 
-
-
     // Search type change handler
     searchType.addEventListener('change', function() {
         updateSearchHelpText();

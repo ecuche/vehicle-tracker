@@ -11,7 +11,7 @@ use PHPMailer\PHPMailer\Exception;
  * Send email verification message
  */
 function sendVerificationEmail($email, $verificationToken) {
-    $subject = "Verify Your Email - Vehicle Tracker";
+    $subject = "Verify Your Email - ". $_ENV['APP_NAME'];
     
     $verificationUrl = base_url("verify-email/{$verificationToken}");
     
@@ -31,21 +31,21 @@ function sendVerificationEmail($email, $verificationToken) {
     <body>
         <div class='container'>
             <div class='header'>
-                <h1>Vehicle Tracker</h1>
+                <h1>".$_ENV['APP_NAME']."</h1>
             </div>
             <div class='content'>
                 <h2>Verify Your Email Address</h2>
-                <p>Thank you for registering with Vehicle Tracker. Please verify your email address by clicking the button below:</p>
+                <p>Thank you for registering with ".$_ENV['APP_NAME'].". Please verify your email address by clicking the button below:</p>
                 <p style='text-align: center;'>
                     <a href='{$verificationUrl}' class='button'>Verify Email Address</a>
                 </p>
                 <p>If the button doesn't work, you can copy and paste the following link into your browser:</p>
                 <p><a href='{$verificationUrl}'>{$verificationUrl}</a></p>
                 <p>This verification link will expire in 24 hours.</p>
-                <p>If you didn't create an account with Vehicle Tracker, please ignore this email.</p>
+                <p>If you didn't create an account with ".$_ENV['APP_NAME'].", please ignore this email.</p>
             </div>
             <div class='footer'>
-                <p>&copy; " . date('Y') . " Vehicle Tracker. All rights reserved.</p>
+                <p>&copy; " . date('Y') . " ".$_ENV['APP_NAME'].". All rights reserved.</p>
             </div>
         </div>
     </body>
@@ -59,7 +59,7 @@ function sendVerificationEmail($email, $verificationToken) {
  * Send password reset email
  */
 function sendPasswordResetEmail($email, $resetToken) {
-    $subject = "Reset Your Password - Vehicle Tracker";
+    $subject = "Reset Your Password - ".$_ENV['APP_NAME'];
     
     $resetUrl = base_url("reset-password/{$resetToken}");
     
@@ -79,11 +79,11 @@ function sendPasswordResetEmail($email, $resetToken) {
     <body>
         <div class='container'>
             <div class='header'>
-                <h1>Vehicle Tracker</h1>
+                <h1>".$_ENV['APP_NAME']."</h1>
             </div>
             <div class='content'>
                 <h2>Reset Your Password</h2>
-                <p>We received a request to reset your password for your Vehicle Tracker account. Click the button below to reset your password:</p>
+                <p>We received a request to reset your password for your ".$_ENV['APP_NAME']." account. Click the button below to reset your password:</p>
                 <p style='text-align: center;'>
                     <a href='{$resetUrl}' class='button'>Reset Password</a>
                 </p>
@@ -93,7 +93,7 @@ function sendPasswordResetEmail($email, $resetToken) {
                 <p>If you didn't request a password reset, please ignore this email. Your password will remain unchanged.</p>
             </div>
             <div class='footer'>
-                <p>&copy; " . date('Y') . " Vehicle Tracker. All rights reserved.</p>
+                <p>&copy; " . date('Y') . " ".$_ENV['APP_NAME'].". All rights reserved.</p>
             </div>
         </div>
     </body>
@@ -107,7 +107,7 @@ function sendPasswordResetEmail($email, $resetToken) {
  * Send vehicle transfer notification
  */
 function sendTransferNotification($recipientEmail, $vehicle, $fromUser) {
-    $subject = "Vehicle Transfer Request - Vehicle Tracker";
+    $subject = "Vehicle Transfer Request - ".$_ENV['APP_NAME']."";
     
     $vehicleDetails = "
         <ul>
@@ -137,7 +137,7 @@ function sendTransferNotification($recipientEmail, $vehicle, $fromUser) {
     <body>
         <div class='container'>
             <div class='header'>
-                <h1>Vehicle Tracker</h1>
+                <h1>".$_ENV['APP_NAME']."</h1>
             </div>
             <div class='content'>
                 <h2>Vehicle Transfer Request</h2>
@@ -148,14 +148,14 @@ function sendTransferNotification($recipientEmail, $vehicle, $fromUser) {
                     {$vehicleDetails}
                 </div>
                 
-                <p>Please log in to your Vehicle Tracker account to accept or reject this transfer request.</p>
+                <p>Please log in to your ".$_ENV['APP_NAME']." account to accept or reject this transfer request.</p>
                 
                 <p><a href='{$dashboardUrl}'>Go to Dashboard</a></p>
                 
                 <p><strong>Note:</strong> You must accept the transfer within 7 days, after which the request will expire.</p>
             </div>
             <div class='footer'>
-                <p>&copy; " . date('Y') . " Vehicle Tracker. All rights reserved.</p>
+                <p>&copy; " . date('Y') . " ".$_ENV['APP_NAME'].". All rights reserved.</p>
             </div>
         </div>
     </body>
@@ -169,7 +169,7 @@ function sendTransferNotification($recipientEmail, $vehicle, $fromUser) {
  * Send transfer accepted notification
  */
 function sendTransferAcceptedNotification($previousOwnerEmail, $vehicleId) {
-    $subject = "Vehicle Transfer Accepted - Vehicle Tracker";
+    $subject = "Vehicle Transfer Accepted - ".$_ENV['APP_NAME']."";
     
     $vehicleUrl = base_url("vehicles");
     
@@ -188,7 +188,7 @@ function sendTransferAcceptedNotification($previousOwnerEmail, $vehicleId) {
     <body>
         <div class='container'>
             <div class='header'>
-                <h1>Vehicle Tracker</h1>
+                <h1>".$_ENV['APP_NAME']."</h1>
             </div>
             <div class='content'>
                 <h2>Vehicle Transfer Completed</h2>
@@ -198,7 +198,7 @@ function sendTransferAcceptedNotification($previousOwnerEmail, $vehicleId) {
                 <p><a href='{$vehicleUrl}'>View Your Vehicles</a></p>
             </div>
             <div class='footer'>
-                <p>&copy; " . date('Y') . " Vehicle Tracker. All rights reserved.</p>
+                <p>&copy; " . date('Y') . " ".$_ENV['APP_NAME'].". All rights reserved.</p>
             </div>
         </div>
     </body>
@@ -212,7 +212,7 @@ function sendTransferAcceptedNotification($previousOwnerEmail, $vehicleId) {
  * Send vehicle status change notification
  */
 function sendVehicleStatusChangeNotification($ownerEmail, $vehicle, $newStatus) {
-    $subject = "Vehicle Status Updated - Vehicle Tracker";
+    $subject = "Vehicle Status Updated - ".$_ENV['APP_NAME']."";
     
     $statusLabels = [
         'none' => 'Normal',
@@ -242,7 +242,7 @@ function sendVehicleStatusChangeNotification($ownerEmail, $vehicle, $newStatus) 
     <body>
         <div class='container'>
             <div class='header'>
-                <h1>Vehicle Tracker</h1>
+                <h1>".$_ENV['APP_NAME']."</h1>
             </div>
             <div class='content'>
                 <h2>Vehicle Status Update</h2>
@@ -261,7 +261,7 @@ function sendVehicleStatusChangeNotification($ownerEmail, $vehicle, $newStatus) 
                 <p>If you believe this status change is incorrect, please contact the system administrator.</p>
             </div>
             <div class='footer'>
-                <p>&copy; " . date('Y') . " Vehicle Tracker. All rights reserved.</p>
+                <p>&copy; " . date('Y') . " ".$_ENV['APP_NAME'].". All rights reserved.</p>
             </div>
         </div>
     </body>
@@ -275,7 +275,7 @@ function sendVehicleStatusChangeNotification($ownerEmail, $vehicle, $newStatus) 
  * Send admin alert email
  */
 function sendAdminAlert($subject, $message, $priority = 'normal') {
-    $adminEmail = $_ENV['ADMIN_EMAIL'] ?? $_ENV['MAIL_USERNAME'] ?? 'admin@vehicletracker.com';
+    $adminEmail = $_ENV['ADMIN_EMAIL'] ?? $_ENV['MAIL_USERNAME'] ?? 'admin@example.com';
     
     $priorityColors = [
         'low' => '#17a2b8',
@@ -302,17 +302,17 @@ function sendAdminAlert($subject, $message, $priority = 'normal') {
     <body>
         <div class='container'>
             <div class='header'>
-                <h1>Vehicle Tracker - Admin Alert</h1>
+                <h1>".$_ENV['APP_NAME']." - Admin Alert</h1>
                 <p>Priority: " . ucfirst($priority) . "</p>
             </div>
             <div class='content'>
                 <div class='alert'>
                     {$message}
                 </div>
-                <p>This is an automated alert from the Vehicle Tracker system.</p>
+                <p>This is an automated alert from the ".$_ENV['APP_NAME']." system.</p>
             </div>
             <div class='footer'>
-                <p>&copy; " . date('Y') . " Vehicle Tracker. All rights reserved.</p>
+                <p>&copy; " . date('Y') . " ".$_ENV['APP_NAME'].". All rights reserved.</p>
             </div>
         </div>
     </body>
@@ -339,11 +339,11 @@ function sendEmail($to, $subject, $message, $attachments = []) {
         $mail->Port = $_ENV['MAIL_PORT'] ?? 587;
         
         // Recipients
-        $mail->setFrom($_ENV['MAIL_FROM'] ?? 'no-reply@vehicletracker.com', 'Vehicle Tracker');
+        $mail->setFrom($_ENV['MAIL_FROM'] ?? 'no-reply@example.com', $_ENV['APP_NAME']);
         $mail->addAddress($to);
         
         // Reply-to address
-        $mail->addReplyTo($_ENV['MAIL_REPLY_TO'] ?? $_ENV['MAIL_FROM'] ?? 'support@vehicletracker.com', 'Vehicle Tracker Support');
+        $mail->addReplyTo($_ENV['MAIL_REPLY_TO'] ?? $_ENV['MAIL_FROM'] ?? 'support@example.com', $_ENV['APP_NAME'].' Support');
         
         // Attachments
         foreach ($attachments as $attachment) {
@@ -381,8 +381,8 @@ function sendEmailFallback($to, $subject, $message) {
     $headers = [
         'MIME-Version: 1.0',
         'Content-type: text/html; charset=utf-8',
-        'From: ' . ($_ENV['MAIL_FROM'] ?? 'no-reply@vehicletracker.com'),
-        'Reply-To: ' . ($_ENV['MAIL_REPLY_TO'] ?? 'support@vehicletracker.com'),
+        'From: ' . ($_ENV['MAIL_FROM'] ?? 'no-reply@example.com'),
+        'Reply-To: ' . ($_ENV['MAIL_REPLY_TO'] ?? 'support@example.com'),
         'X-Mailer: PHP/' . phpversion()
     ];
     
@@ -433,13 +433,13 @@ function sendBulkEmails($emails, $subject, $messageTemplate, $placeholders = [],
  * Test email configuration
  */
 function testEmailConfiguration() {
-    $testEmail = $_ENV['MAIL_USERNAME'] ?? 'test@vehicletracker.com';
-    $subject = "Vehicle Tracker - Email Configuration Test";
+    $testEmail = $_ENV['MAIL_USERNAME'] ?? 'test@example.com';
+    $subject = $_ENV['APP_NAME']." - Email Configuration Test";
     $message = "
     <html>
     <body>
         <h2>Email Configuration Test</h2>
-        <p>This is a test email sent from the Vehicle Tracker system.</p>
+        <p>This is a test email sent from the ".$_ENV['APP_NAME']." system.</p>
         <p>If you're receiving this email, your email configuration is working correctly.</p>
         <p>Timestamp: " . date('Y-m-d H:i:s') . "</p>
     </body>
@@ -455,30 +455,30 @@ function testEmailConfiguration() {
 function getEmailTemplate($templateName, $variables = []) {
     $templates = [
         'welcome' => [
-            'subject' => 'Welcome to Vehicle Tracker!',
+            'subject' => 'Welcome to '.$_ENV['APP_NAME'].'!',
             'message' => '
-            <h2>Welcome to Vehicle Tracker!</h2>
-            <p>Thank you for joining Vehicle Tracker. Your account has been successfully created.</p>
+            <h2>Welcome to '.$_ENV['APP_NAME'].'!</h2>
+            <p>Thank you for joining '.$_ENV['APP_NAME'].'. Your account has been successfully created.</p>
             <p>You can now register your vehicles, transfer ownership, and search for vehicle information.</p>
             <p><a href="{{login_url}}">Login to Your Account</a></p>
             '
         ],
         
         'account_verified' => [
-            'subject' => 'Account Verified - Vehicle Tracker',
+            'subject' => 'Account Verified - '.$_ENV['APP_NAME'],
             'message' => '
             <h2>Account Verified Successfully</h2>
-            <p>Your Vehicle Tracker account has been verified and is now fully active.</p>
+            <p>Your '.$_ENV['APP_NAME'].' account has been verified and is now fully active.</p>
             <p>You can access all features of the platform.</p>
             <p><a href="{{dashboard_url}}">Go to Dashboard</a></p>
             '
         ],
         
         'password_changed' => [
-            'subject' => 'Password Changed - Vehicle Tracker',
+            'subject' => 'Password Changed - '.$_ENV['APP_NAME'],
             'message' => '
             <h2>Password Changed Successfully</h2>
-            <p>Your Vehicle Tracker password has been changed successfully.</p>
+            <p>Your '.$_ENV['APP_NAME'].' password has been changed successfully.</p>
             <p>If you did not make this change, please contact support immediately.</p>
             <p><a href="{{support_url}}">Contact Support</a></p>
             '

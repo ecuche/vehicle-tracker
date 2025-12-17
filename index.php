@@ -177,16 +177,38 @@ try {
 // -----------------------------------------------------------------------------
 
 try {
-    $url = !empty($_SERVER['HTTPS'])  ? "https://" : "http://";
-    $url .= $_SERVER['HTTP_HOST'];
-    $url .= $_SERVER['REQUEST_URI'];
-    $url = str_replace($_ENV['APP_URL']."/", '', $url) ?? '/';
-
+    // Get the request URI path
+    $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+    
     // Remove query string
-    $url = explode('?', $url)[0];
-    $url = rtrim($url, '/') ?: '/';
+    $url = parse_url($requestUri, PHP_URL_PATH) ?? '/';
+    
+    // Get the base path from APP_URL if set
+    if (!empty($_ENV['APP_URL'])) {
+        $basePath = parse_url($_ENV['APP_URL'], PHP_URL_PATH) ?? '';
+        
+        // Remove base path from URL if it exists
+        if (!empty($basePath) && strpos($url, $basePath) === 0) {
+            $url = substr($url, strlen($basePath));
+        }
+    }
+    
+    // Normalize the URL
+    $url = '/' . trim($url, '/');
+    if ($url !== '/') {
+        $url = rtrim($url, '/');
+    }
+    
+    // Debug logging
+    if (!empty($_ENV['APP_DEBUG']) && $_ENV['APP_DEBUG'] === 'true') {
+        error_log("Request URI: " . $requestUri);
+        error_log("Base Path: " . ($basePath ?? 'none'));
+        error_log("Final URL: " . $url);
+    }
 
     $router = new Router();
+    
+    // Load routes from config file
     $router->loadRoutes();
 
     $router->dispatch($url);
@@ -275,4 +297,3 @@ if (!empty($_ENV['APP_DEBUG']) && $_ENV['APP_DEBUG'] === 'true') {
     $ms = round((microtime(true) - APP_START) * 1000, 2);
     error_log("Request took {$ms}ms");
 }
-

@@ -45,134 +45,14 @@ class AdminController extends Controller {
         $this->view('admin/users', $data);
     }
 
-    public function searchUser() {
-        $identifier = $_GET['q'] ?? '';
-        
-        if (empty($identifier)) {
-            header('Content-Type: application/json');
-            echo json_encode([]);
-            exit;
-        }
-
-        $users = $this->user->searchByIdentifier($identifier);
-        
-        header('Content-Type: application/json');
-        echo json_encode($users);
-        exit;
-    }
-
-    public function getUserDetails($user_id) {
-        $user = $this->user->findById($user_id);
-        
-        if ($user) {
-            $vehicles = $this->user->getUserVehiclesWithHistory($user_id);
-            $contact_details = [
-                'email' => $user['email'],
-                'phone' => $user['phone'],
-                'nin' => $user['nin']
-            ];
-            
-            $data = [
-                'user' => $user,
-                'vehicles' => $vehicles,
-                'contact_details' => $contact_details
-            ];
-            
-            header('Content-Type: application/json');
-            echo json_encode($data);
-        } else {
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'User not found']);
-        }
-        exit;
-    }
-
-    public function updateUserRole() {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $user_id = $_POST['user_id'] ?? '';
-            $new_role = $_POST['role'] ?? '';
-            
-            $allowed_roles = ['driver', 'searcher', 'admin'];
-            
-            if (!in_array($new_role, $allowed_roles)) {
-                $this->session->setFlash('error', 'Invalid role');
-                header("Location: {$_ENV['APP_URL']}/admin/users");
-                exit;
-            }
-            
-            if ($this->user->updateRole($user_id, $new_role)) {
-                $this->audit->log(
-                    $this->auth->getUserId(),
-                    'update_user_role',
-                    'users',
-                    $user_id,
-                    ['old_role' => $_POST['old_role'] ?? ''],
-                    ['new_role' => $new_role]
-                );
-                
-                $this->session->setFlash('success', 'User role updated successfully');
-            } else {
-                $this->session->setFlash('error', 'Failed to update user role');
-            }
-        }
-        $this->redirect('admin/user');
-    }
-
-    public function toggleUserBan() {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $user_id = $_POST['user_id'] ?? '';
-            $action = $_POST['action'] ?? ''; // ban or unban
-            
-            $user = $this->user->findById($user_id);
-            
-            if (!$user) {
-                $this->session->setFlash('error', 'User not found');
-                header("Location: {$_ENV['APP_URL']}/admin/users");
-                exit;
-            }
-            
-            if ($action === 'ban') {
-                if ($this->user->ban($user_id)) {
-                    $this->audit->log(
-                        $this->auth->getUserId(),
-                        'ban_user',
-                        'users',
-                        $user_id,
-                        ['is_banned' => false],
-                        ['is_banned' => true]
-                    );
-                    
-                    $this->session->setFlash('success', 'User banned successfully');
-                } else {
-                    $this->session->setFlash('error', 'Failed to ban user');
-                }
-            } elseif ($action === 'unban') {
-                if ($this->user->unban($user_id)) {
-                    $this->audit->log(
-                        $this->auth->getUserId(),
-                        'unban_user',
-                        'users',
-                        $user_id,
-                        ['is_banned' => true],
-                        ['is_banned' => false]
-                    );
-                    
-                    $this->session->setFlash('success', 'User unbanned successfully');
-                } else {
-                    $this->session->setFlash('error', 'Failed to unban user');
-                }
-            }
-        }
-        $this->redirect('admin/user');
-    }
-
     public function vehicles() {
         $page = $_GET['page'] ?? 1;
         $per_page = $_GET['per_page'] ?? 10;
         $search = $_GET['search'] ?? '';
         $status = $_GET['status'] ?? '';
+        $offset = ($page - 1) * $per_page;
         
-        $vehicles = $this->vehicle->getVehiclesPaginated($page, $per_page, $search, $status);
+        $vehicles = $this->vehicle->getVehiclesPaginated($offset, $per_page, $search, $status);
         $total_vehicles = $this->vehicle->getVehiclesCount($search, $status);
         $normal_count = $this->vehicle->getNormalStatusCount();
         $stolen_count = $this->vehicle->getStolenStatusCount();
@@ -201,8 +81,8 @@ class AdminController extends Controller {
 
     public function updateVehicleStatus() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $vehicle_id = $_POST['vehicle_id'] ?? '';
-            $status = $_POST['status'] ?? '';
+            $vehicle_id = $this->request->post('vehicle_id') ?? '';
+            $status = $this->request->post('status') ?? '';
             
             $allowed_statuses = ['none', 'stolen', 'no_customs_duty', 'changed_engine', 'changed_color'];
             
@@ -245,12 +125,12 @@ class AdminController extends Controller {
     }
 
     public function audit() {
-        $page = $_GET['page'] ?? 1;
-        $per_page = $_GET['per_page'] ?? 10;
-        $search = $_GET['search'] ?? '';
-        $action = $_GET['action'] ?? '';
-        $start_date = $_GET['start_date'] ?? '';
-        $end_date = $_GET['end_date'] ?? '';
+        $page = $this->request->get('page', 1);
+        $per_page = $this->request->get('per_page', 10);
+        $search = $this->request->get('search', '');
+        $action = $this->request->get('action', '');
+        $start_date = $this->request->get('start_date', '');
+        $end_date = $this->request->get('end_date', '');
         
         $audit_logs = $this->audit->getAuditLogsPaginated($page, $per_page, $search, $action, $start_date, $end_date);
         $total_logs = $this->audit->getAuditLogsCount($search, $action, $start_date, $end_date);
@@ -278,68 +158,6 @@ class AdminController extends Controller {
         $this->view('admin/audit', $data);
     }
 
-    public function exportAuditToCSV() {
-        $search = $_GET['search'] ?? '';
-        $action = $_GET['action'] ?? '';
-        $start_date = $_GET['start_date'] ?? '';
-        $end_date = $_GET['end_date'] ?? '';
-        
-        $audit_logs = $this->audit->getAllAuditLogs($search, $action, $start_date, $end_date);
-        
-        header('Content-Type: text/csv');
-        header('Content-Disposition: attachment; filename="audit_trail_' . date('Y-m-d') . '.csv"');
-        
-        $output = fopen('php://output', 'w');
-        
-        // Add CSV headers
-        fputcsv($output, [
-            'ID',
-            'User ID',
-            'Action',
-            'Table',
-            'Record ID',
-            'Old Values',
-            'New Values',
-            'IP Address',
-            'User Agent',
-            'Timestamp'
-        ]);
-        
-        // Add data
-        foreach ($audit_logs as $log) {
-            fputcsv($output, [
-                $log->id,
-                $log->user_id,
-                $log->action,
-                $log->table_name,
-                $log->record_id,
-                $log->old_values,
-                $log->new_values,
-                $log->ip_address,
-                $log->user_agent,
-                $log->created_at
-            ]);
-        }
-        
-        fclose($output);
-        exit;
-    }
-
-    public function getStats() {
-        $stats = [
-            'total_users' => $this->user->getTotalCount(),
-            'total_vehicles' => $this->vehicle->getTotalCount(),
-            'total_transfers' => $this->transfer->getTotalCount(),
-            'pending_transfers' => $this->transfer->getPendingCount(),
-            'banned_users' => $this->user->getBannedCount(),
-            'vehicles_by_status' => $this->vehicle->getCountByStatus()
-        ];
-        
-        header('Content-Type: application/json');
-        echo json_encode($stats);
-        exit;
-    }
-
     public function manageUser($email){
         $user = is_numeric($email) ? $this->user->findById($email) : $this->user->findByEmail($email);
         if (empty($user)) {
@@ -347,7 +165,10 @@ class AdminController extends Controller {
             header('Location: '.$_ENV['APP_URL'].'/dashboard');
             exit;
         }
-        $data['user'] = $user;
+        $data = [
+            'user' => $user,
+            'stats' => $this->vehicle->userVehicleStats($user['id']),
+        ];
         $this->view('admin/edit-user', $data);
     }
 
@@ -366,60 +187,14 @@ class AdminController extends Controller {
             'user' => $user,
             'vehicle_makes' => $vehicle_makes,
             'vehicle_models' => $vehicle_models,
+            'stats' => $this->vehicle->vehicleStat($vehicle['id'])
         ];
         $this->view('admin/edit-vehicle', $data);
     }
 
-    public function updateUser(){
-        $post = json_decode(file_get_contents("php://input"), true);
-         if (empty($post['email'])) {
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'Unauthorized']);
-            exit;
-        }
-        $data = [
-            'name' => $post['name'],
-            'role' => $post['role'],
-            'is_banned' => empty($post['is_banned']) ? 0 : 1
-        ]; 
-        $user =  $this->user->findByEmail($post['email']);
-       
-        if ($this->user->updateUser($user['id'], $data)) {
-            $user['success'] = true;
-            header('Content-Type: application/json');
-            echo json_encode($user);
-        } else {
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'User not found']);
-        }
-        exit;
-    }
+  
 
-    public function deleteUser() {
-        $post = json_decode(file_get_contents("php://input"), true);
-        if (empty($post['email'])) {
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'Unauthorized']);
-            exit;
-        }
-        $user = $this->user->findByEmail($post['email']);
-        if ($user && $this->user->softDeleteById($user['id'])) {
-            $this->audit->log(
-                $this->auth->getUserId(),
-                'delete_user',
-                'users',
-                $user['id'],
-                ['email' => $user['email']]
-            );
-            $user['success'] = true;
-            header('Content-Type: application/json');
-            echo json_encode($user);
-        } else {
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'User not found or could not be deleted']);
-        }
-        exit;
-    }
+   
 
     public function updateVehicle(){
        exit;
@@ -491,6 +266,160 @@ class AdminController extends Controller {
             'audit_logs' => $audit_logs,
         ];
         $this->view('admin/user-audit', $data);
+    }
+
+    public function viewAdmins(){
+        $current_page = $this->request->get('page', 1);
+        $per_page = $this->request->get('per_page', 10);
+        $offset = ($current_page -1) * $per_page;
+        $total_items = $this->user->countRow(['role'=>'admin']);
+        $admins = $this->user->findPagination(['role'=> 'admin'], $per_page , $offset);
+        $total_pages = ceil($total_items / $per_page);
+        $stats = $this->user->roleStat('admin');
+        $data = [
+            'admins' => $admins, 
+            'per_page' => $per_page,
+            'current_page' => $current_page,
+            'total_items' => $total_items,
+            'total_pages' => $total_pages,
+            'stats' => $stats
+        ];
+        $this->view('admin/admins', $data);
+    }
+
+    public function viewDrivers(){
+        $current_page = $this->request->get('page', 1);
+        $per_page = $this->request->get('per_page', 10);
+        $offset = ($current_page -1) * $per_page;
+        $total_items = $this->user->countRow(['role'=>'driver']);
+        $drivers = $this->user->getWithRoleAndVehicleStatsPagination('driver', $per_page , $offset);
+        $total_pages = ceil($total_items / $per_page);
+        $stats = $this->user->roleStat('driver');
+        $data = [
+            'drivers' => $drivers, 
+            'per_page' => $per_page,
+            'current_page' => $current_page,
+            'total_items' => $total_items,
+            'total_pages' => $total_pages,
+            'stats' => $stats
+        ];
+        $this->view('admin/drivers', $data);
+    }
+
+    public function viewSearchers(){
+        $current_page = $this->request->get('page', 1);
+        $per_page = $this->request->get('per_page', 10);
+        $offset = ($current_page -1) * $per_page;
+        $total_items = $this->user->countRow(['role'=>'searcher']);
+        $searchers = $this->user->findPagination(['role'=> 'searcher'], $per_page , $offset);
+        $total_pages = ceil($total_items / $per_page);
+        $stats = $this->user->roleStat('searcher');
+        $data = [
+            'searchers' => $searchers, 
+            'per_page' => $per_page,
+            'current_page' => $current_page,
+            'total_items' => $total_items,
+            'total_pages' => $total_pages,
+            'stats' => $stats
+        ];
+        $this->view('admin/searchers', $data);
+    }
+
+    public function viewNormalVehicles(){
+        $current_page = $this->request->get('page', 1);
+        $per_page = $this->request->get('per_page', 10);
+        $offset = ($current_page -1) * $per_page;
+        $total_items = $this->vehicle->countRow(['current_status'=>'none']);
+        $stats = $this->vehicle->vehiclesStat('none');
+        $total_pages = ceil($total_items / $per_page);
+        $vehicles = $this->vehicle->getVehiclesPaginated($offset, $per_page , 'none');
+        $data = [
+            'vehicles' => $vehicles, 
+            'per_page' => $per_page,
+            'current_page' => $current_page,
+            'total_items' => $total_items,
+            'total_pages' => $total_pages,
+            'stats' => $stats
+        ];
+        $this->view('admin/normal-vehicles', $data);
+    }
+
+    public function viewStolenVehicles(){
+        $current_page = $this->request->get('page', 1);
+        $per_page = $this->request->get('per_page', 10);
+        $offset = ($current_page -1) * $per_page;
+        $total_items = $this->vehicle->countRow(['current_status'=>'stolen']);
+        $stats = $this->vehicle->vehiclesStat('stolen');
+        $total_pages = ceil($total_items / $per_page);
+        $vehicles = $this->vehicle->getVehiclesPaginated($offset, $per_page , 'stolen');
+        $data = [
+            'vehicles' => $vehicles, 
+            'per_page' => $per_page,
+            'current_page' => $current_page,
+            'total_items' => $total_items,
+            'total_pages' => $total_pages,
+            'stats' => $stats
+        ];
+        $this->view('admin/stolen-vehicles', $data);
+    }
+
+    public function viewNoCustomsVehicles(){
+        $current_page = $this->request->get('page', 1);
+        $per_page = $this->request->get('per_page', 10);
+        $offset = ($current_page -1) * $per_page;
+        $total_items = $this->vehicle->countRow(['current_status'=>'no_customs_duty']);
+        $stats = $this->vehicle->vehiclesStat('no_customs_duty');
+        $total_pages = ceil($total_items / $per_page);
+        $vehicles = $this->vehicle->getVehiclesPaginated($offset, $per_page , 'no_customs_duty');
+        $data = [
+            'vehicles' => $vehicles, 
+            'per_page' => $per_page,
+            'current_page' => $current_page,
+            'total_items' => $total_items,
+            'total_pages' => $total_pages,
+            'stats' => $stats
+        ];
+        $this->view('admin/no-customs-vehicles', $data);
+    }
+
+    public function viewChangedEngineVehicles(){
+        $current_page = $this->request->get('page', 1);
+        $per_page = $this->request->get('per_page', 10);
+        $offset = ($current_page -1) * $per_page;
+        $total_items = $this->vehicle->countRow(['current_status'=>'changed_engine']);
+        $stats = $this->vehicle->vehiclesStat('changed_engine');
+        $total_pages = ceil($total_items / $per_page);
+        $vehicles = $this->vehicle->getVehiclesPaginated($offset, $per_page , 'changed_engine');
+        $data = [
+            'vehicles' => $vehicles, 
+            'per_page' => $per_page,
+            'current_page' => $current_page,
+            'total_items' => $total_items,
+            'total_pages' => $total_pages,
+            'stats' => $stats
+        ];
+        $this->view('admin/changed-engine-vehicles', $data);
+    }
+
+    public function viewChangedColorVehicles(){
+         $current_page = $this->request->get('page', 1);
+        $per_page = $this->request->get('per_page', 10);
+        $offset = ($current_page -1) * $per_page;
+        $total_items = $this->vehicle->countRow(['current_status'=>'changed_color']);
+        $stats = $this->vehicle->vehiclesStat('changed_color');
+        $total_pages = ceil($total_items / $per_page);
+        $vehicles = $this->vehicle->getVehiclesPaginated($offset, $per_page , 'changed_color');
+        $data = [
+            'vehicles' => $vehicles, 
+            'per_page' => $per_page,
+            'current_page' => $current_page,
+            'total_items' => $total_items,
+            'total_pages' => $total_pages,
+            'stats' => $stats
+        ];
+        $this->view('admin/changed-color-vehicles', $data);
+
+
     }
 }
 ?>

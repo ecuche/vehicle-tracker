@@ -258,5 +258,13 @@ class Audit extends Model {
         $stmt->execute([$user_id]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function getAuditStats(){
+        $data = [
+            'total_audit' => $this->countRow([], 'ed'),
+
+        ];
+        return $data;
+    }
 }
 ?>

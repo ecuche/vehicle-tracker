@@ -17,24 +17,51 @@ class VehicleController extends Controller {
         $this->auth = new Auth();   
     }
 
+        public function index() {
+        $user_id = $this->auth->getUserId();
+        
+        $page = $_GET['page'] ?? 1;
+        $per_page = $_GET['per_page'] ?? 10;
+        $total_vehicles = $this->vehicle->getUserVehicleCount($user_id);
+        $data = [
+            'vehicles' => $this->vehicle->getUserVehiclesPaginated($user_id, $page, $per_page),
+            'pagination' => [
+                'page' => $page,
+                'per_page' => $per_page,
+                'total' => $total_vehicles,
+                'total_pages' => ceil($total_vehicles / $per_page)
+            ],
+            'pending_requests'=> $this->transfer->getOutgoingCount($user_id),
+            'failed_sales'=> $this->transfer->getFailedCount($user_id),
+            'incoming_requests' => $this->transfer->getIncomingCount($user_id),
+            'total_vehicles' => $total_vehicles,
+            'sold_vehicles' => $this->transfer->getSoldCount($user_id),
+        ];
+        $this->view('vehicle/index', $data);
+    }
+
+    public function viewVehicleRegister(){
+        $this->response->roleAuth(['driver', 'searcher']);
+        $vehicle_models = $this->vehicleModel->getAll();
+        $vehicle_makes = $this->vehicleModel->getAllMake();
+        $data = [
+            'vehicle_models' => $vehicle_models,
+            'vehicle_makes' => $vehicle_makes,
+        ];
+        $this->view('vehicle/register', $data);
+    }
+
     public function register() {
         $user_id = $this->auth->getUserId();
-        $user_role = $this->auth->getUserRole();
-        
-        // Only drivers and searchers can register vehicles
-        if (!in_array($user_role, ['driver', 'searcher'])) {
-            $this->session->setFlash('error', 'Only drivers and searchers can register vehicles');
-            $this->redirect('dashboard');
-            exit;
-        }
-
+        $this->response->roleAuth(['driver', 'searcher']);
+       
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = [
-                'vin' => trim($_POST['vin'] ?? ''),
-                'plate_number' => trim($_POST['plate_number'] ?? ''),
-                'vehicle_model_id' => $_POST['vehicle_model_id'] ?? '',
-                'year' => $_POST['year'] ?? '',
-                'color' => $_POST['color'] ?? '',
+                'vin' => trim($this->request->post('vin') ?? ''),
+                'plate_number' => trim($this->request->post('plate_number') ?? ''),
+                'vehicle_model_id' => $this->request->post('vehicle_model_id') ?? '',
+                'year' => $this->request->post('year') ?? '',
+                'color' => $this->request->post('color') ?? '',
                 'user_id' => $user_id
             ];
 
@@ -138,35 +165,12 @@ class VehicleController extends Controller {
         return $errors;
     }
 
-    public function index() {
-        $user_id = $this->auth->getUserId();
-        
-        $page = $_GET['page'] ?? 1;
-        $per_page = $_GET['per_page'] ?? 10;
-        $total_vehicles = $this->vehicle->getUserVehicleCount($user_id);
-        $data = [
-            'vehicles' => $this->vehicle->getUserVehiclesPaginated($user_id, $page, $per_page),
-            'pagination' => [
-                'page' => $page,
-                'per_page' => $per_page,
-                'total' => $total_vehicles,
-                'total_pages' => ceil($total_vehicles / $per_page)
-            ],
-            'pending_requests'=> $this->transfer->getOutgoingCount($user_id),
-            'failed_sales'=> $this->transfer->getFailedCount($user_id),
-            'incoming_requests' => $this->transfer->getIncomingCount($user_id),
-            'total_vehicles' => $total_vehicles,
-            'sold_vehicles' => $this->transfer->getSoldCount($user_id),
-        ];
-        $this->view('vehicle/index', $data);
-    }
-
     public function transfer() {
         $user_id = $this->auth->getUserId();
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $vehicle_id = $_POST['vehicle_id'] ?? '';
-            $user_identifier = trim($_POST['user_identifier'] ?? '');
+            $vehicle_id = $this->request->post('vehicle_id') ?? '';
+            $user_identifier = trim($this->request->post('user_identifier') ?? '');
             
             $errors = [];
             
@@ -207,7 +211,6 @@ class VehicleController extends Controller {
             $this->session->setFlash('errors', $errors);
         }
         $this->redirect('vehicles');
-        exit;
     }
 
     public function transferVehicle($vin) {
@@ -229,45 +232,13 @@ class VehicleController extends Controller {
         $this->view('vehicle/transfer', $data);
     }
 
-    public function handleTransfer($vin = null) {
-        $post = json_decode(file_get_contents('php://input'), true);
-        $vin = $vin ?: $post['vin'];
-        $seller = $this->user->findById($this->auth->getUserId());
-        $buyer = $this->user->findById($post['recipient_id']);
-        if (empty($post) || empty($post['vehicle_id']) || empty($post['recipient_id'])) {
-            echo json_encode(['error' => 'Vehicle or User not found']);
-            exit;
-        }
-        $vehicle = $this->vehicle->findById($post['vehicle_id']);
-        if(empty($vehicle) || $vehicle['current_status'] == "stolen" || $vehicle['user_id'] != $seller['id']) {
-            echo json_encode(['error' => 'Vehicle Validation failed']);
-            exit;
-        }
-        $this->vehicle->updateById(['user_id'=> $buyer['id'], ], $vehicle['id']);
-        $this->transfer->updateLast(['end_date' => date('Y-m-d H:i:s')], ['vehicle_id' => $vehicle['id']]);
-        $this->transfer->update(['is_current' => 0], ['vehicle_id' => $vehicle['id']]);
-        $transfer = $this->transfer->insertAndGet([
-            'vehicle_id' => $vehicle['id'],
-            'seller_id' => $seller['id'],
-            'buyer_id' => $buyer['id'],
-            'transfer_type' => $post['transfer_type'] ?? '',
-            'transfer_amount' => $post['transfer_amount'] ?? '',
-            'transfer_note'=> $post['transfer_note'] ?? '',
-        ]);
-        $this->vehicle->updateById([
-            'transfer_status'=> 'pending',
-            'transfer_id'=> $transfer['id']
-        ], $vehicle['id']);
-        echo json_encode(['success' => true ]);
-        exit;
-    }
-
+  
     public function assignPlate() {
         $user_id = $this->auth->getUserId();
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $vehicle_id = $_POST['vehicle_id'] ?? '';
-            $plate_number = trim($_POST['plate_number'] ?? '');
+            $vehicle_id = $this->request->post('vehicle_id') ?? '';
+            $plate_number = trim($this->request->post('plate_number') ?? '');
             
             $vehicle = $this->vehicle->findVehicleById($vehicle_id);
             
@@ -290,67 +261,6 @@ class VehicleController extends Controller {
             }
         }
         $this->redirect('vehicles');
-        exit;
-    }
-
-    public function getVehicleDetails($vehicle_id) {
-        $vehicle = $this->vehicle->getFullDetails($vehicle_id);
-        
-        if ($vehicle) {
-            header('Content-Type: application/json');
-            echo json_encode($vehicle);
-        } else {
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'Vehicle not found']);
-        }
-        exit;
-    }
-
-    public function searchUser() {
-        $identifier = $_GET['q'] ?? '';
-        if (empty($identifier)) {
-            header('Content-Type: application/json');
-            echo json_encode([]);
-            exit;
-        }
-        $users = $this->user->searchByIdentifier($identifier);
-        header('Content-Type: application/json');
-        echo json_encode($users);
-        exit;
-    }
-
-    public function checkVIN(){
-        if (empty($_POST['vin'])) {
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'Unauthorized']);
-            exit;
-        }
-        $vin = $_POST['vin'];
-        $vehicle = $this->vehicle->findByVIN($vin);
-        if ($vehicle) {
-            header('Content-Type: application/json');
-            echo json_encode($vehicle);
-        } else {
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'VIN not found']);
-        }
-        exit;
-    }
-
-     public function getVehicleModels() {
-        if (empty($_POST['make'])) {
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'Unauthorized']);
-            exit;
-        }
-        $make = $_POST['make'];
-        $models = $this->vehicleModel->getModelsByMake($make);
-        // header('Content-Type: application/json');
-        if ($models) {
-            echo json_encode($models);
-        } else {
-            echo json_encode(['error' => 'Make not found']);
-        }
         exit;
     }
 
@@ -428,9 +338,7 @@ class VehicleController extends Controller {
             'total_items'=> $total_items,
             'stats' => $this->transfer->stats(),
         ];
-
         $this->view('vehicle/completed-transfers', $data);
-
     }
 
     public function incomingTransfers(){
@@ -493,7 +401,6 @@ class VehicleController extends Controller {
             'model' => $model,
             'seller' => $seller,
             'status'=> $status,
-
         ];
         $this->view('vehicle/pending-transfers', $data);
     }

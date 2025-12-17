@@ -3,13 +3,13 @@ $title = "Reset Password";
 $subtitle = "Create your new password";
 $footer_links = '
     <p class="mb-0">
-        <a href="'. $_ENV['APP_URL'].'/login" class="text-decoration-none">Back to login</a>
+        <a href="'. url('login').'" class="text-decoration-none">Back to login</a>
     </p>
 ';
 
 ob_start();
 ?>
-<form action="<?= $_ENV['APP_URL'] ?>/reset-password/<?= $token; ?>" method="POST" class="auth-form" id="resetPasswordForm">
+<form action="<?= url('reset-password/'.$token) ?>" method="POST" class="auth-form" id="resetPasswordForm">
     <?php csrf_field(); ?>
     
     <div class="alert alert-info">

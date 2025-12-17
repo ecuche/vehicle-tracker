@@ -93,9 +93,10 @@ class User extends Model {
         return $stmt->execute([$token]);
     }
 
-    public function createPasswordReset($user_id, $token, $expires_at) {
+    public function createPasswordReset($user_id, $token) {
         // Delete any existing reset tokens for this user
         $this->deleteUserPasswordResets($user_id);
+        $expires_at = date('Y-m-d H:i:s', strtotime('+1 hour'));
 
         $stmt = $this->db->prepare("
             INSERT INTO password_resets (user_id, token, expires_at, created_at) 
@@ -112,7 +113,7 @@ class User extends Model {
             WHERE pr.token = ? AND u.deleted_at IS NULL
         ");
         $stmt->execute([$token]);
-        return $stmt->fetch();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     public function deletePasswordReset($token) {
@@ -182,7 +183,7 @@ class User extends Model {
         ");
         $search_term = "%$identifier%";
         $stmt->execute([$search_term, $search_term, $search_term]);
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function updateRole($user_id, $role) {
@@ -262,7 +263,7 @@ class User extends Model {
             ORDER BY v.created_at DESC
         ");
         $stmt->execute([$user_id, $user_id, $user_id]);
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getUserPlateNumbers($user_id) {
@@ -274,7 +275,7 @@ class User extends Model {
             ORDER BY pn.assigned_at DESC
         ");
         $stmt->execute([$user_id]);
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function deleteUser($user_id) {
@@ -290,5 +291,36 @@ class User extends Model {
         ");
         return $stmt->execute([$user_id]);  
     }
+
+    public function roleStat($role){
+        $stats = [
+            'total' => $this->countRow(['role'=> $role]),
+            'banned' => $this->countRow(['is_banned'=> 1, 'role'=> $role]),
+            'unbanned' => $this->countRow(['is_banned'=> 0, 'role'=> $role]),
+            'unverified' => $this->countRow(['email_verified'=> 0, 'role'=> $role]),
+            'verified' => $this->countRow(['email_verified'=> 1, 'role'=> $role]),
+            'active' => $this->countRow(['email_verified'=> 1, 'role'=> $role, 'is_banned' => 0])
+        ];
+        return $stats;
+    }
+
+    public function getWithRoleAndVehicleStatsPagination($role = 'driver', $offset = 0, $limit = 10) {   
+        $stmt = $this->db->prepare("
+            SELECT 
+            u.*,
+            (SELECT COUNT(*) FROM vehicles v WHERE v.user_id = u.id) as current_count,
+            (SELECT COUNT(*) FROM ownership_transfers ots WHERE ots.seller_id = u.id) as sold_count,
+            (SELECT COUNT(*) FROM ownership_transfers otb WHERE otb.buyer_id = u.id) as bought_count
+        FROM users u
+        WHERE u.role = ? AND u.deleted_at IS NULL
+        ORDER BY u.created_at DESC
+        LIMIT ? OFFSET ?
+        ");
+        $stmt->execute([$role, $offset, $limit]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    
+    }
+
 }
 ?>

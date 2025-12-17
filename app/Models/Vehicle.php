@@ -366,20 +366,21 @@ class Vehicle extends Model {
         }
     }
 
-    public function getVehiclesPaginated($page = 1, $per_page = 10, $search = '', $status = '') {
-        $offset = ($page - 1) * $per_page;
-        
+    public function getVehiclesPaginated($offset = 1, $per_page = 10, $status = '', $search = '') {
         $sql = "
             SELECT 
                 v.*,
-                vm.make,
-                vm.model,
-                u.email as owner_email,
-                u.phone as owner_phone,
-                pn.plate_number as current_plate_number
+                vm.*,
+                u.*,
+                pn.*,
+                vsh.*,
+                vsh.created_at as status_date,
+            (SELECT COUNT(*) FROM ownership_transfers ot WHERE v.id = ot.vehicle_id) as transfer_count,
+            (SELECT COUNT(*) FROM plate_numbers pn WHERE v.id = pn.vehicle_id) as plate_count
             FROM vehicles v
             LEFT JOIN vehicle_models vm ON v.vehicle_model_id = vm.id
             LEFT JOIN users u ON v.user_id = u.id
+            LEFT JOIN vehicle_status_history vsh ON v.current_status_id = vsh.id
             LEFT JOIN plate_numbers pn ON v.id = pn.vehicle_id AND pn.is_current = 1
             WHERE v.deleted_at IS NULL
         ";
@@ -797,5 +798,37 @@ class Vehicle extends Model {
         $stmt->execute([$vehicle_id, $per_page, $offset]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function userVehicleStats($user_id){
+        $stats = [
+            'current'=> $this->countRow(['user_id'=> $user_id]),
+            'sold' => $this->countRow(['seller_id'=> $user_id], 'ownership_transfers'),
+            'bought' => $this->countRow(['buyer_id'=> $user_id], 'ownership_transfers'),
+        ];    
+        return $stats;
+    }
+
+    public function vehiclesStat($status){
+         $stats = [
+            'total'=> $this->countRow(['current_status'=> $status]),
+            'sold' => $this->countRow(['status'=> 'completed'], 'ownership_transfers'),
+            'pending' => $this->countRow(['status'=> 'pending'], 'ownership_transfers'),
+            'rejected' => $this->countRow(['status'=> 'rejected'], 'ownership_transfers'),
+        ];    
+        return $stats;
+    }
+
+    public function vehicleStat($vehicle_id){
+        $vehicle = $this->findById($vehicle_id);
+         $stats = [
+            'owner' => $this->findById($vehicle['user_id'], 'users'),
+            'plates'=> $this->countRow(['vehicle_id'=> $vehicle_id], 'plate_numbers'),
+            'transfers' => $this->countRow(['vehicle_id'=> $vehicle_id], 'ownership_transfers'),
+            'status' => $this->countRow(['vehicle_id'=> $vehicle_id], 'vehicle_status_history'),
+        ];    
+        return $stats;
+    }
+
+
 }
 ?>

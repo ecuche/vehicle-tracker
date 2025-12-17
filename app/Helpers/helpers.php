@@ -292,7 +292,7 @@ function flash_message($type = null) {
     }
     
     // Check for any flash messages
-    $types = ['success', 'error', 'warning', 'info'];
+    $types = ['success', 'error', 'warning', 'info', 'danger'];
     foreach ($types as $flashType) {
         if ($session->hasFlash($flashType)) {
             return [
@@ -670,4 +670,136 @@ function getStatusDescription($status) {
     ];
     return $descriptions[$status] ?? 'Unknown status';
 }
+
+function getAdminRowClass($status, $level) {
+    $classes = [
+        'suspended' => 'table-suspended-row',
+        'active' => $level == 'super' ? 'table-super-row' : 
+                   ($level == 'regular' ? 'table-regular-row' : 'table-limited-row'),
+        'inactive' => ''
+    ];
+    return $classes[$status] ?? '';
+}
+
+function getStatusBadge($status) {
+    $badges = [
+        'active' => '<span class="badge bg-success">Active</span>',
+        'inactive' => '<span class="badge bg-secondary">Inactive</span>',
+        'suspended' => '<span class="badge bg-danger">Suspended</span>'
+    ];
+    return $badges[$status] ?? '<span class="badge bg-secondary">Unknown</span>';
+}
+
+function getAdminLevelBadge($level) {
+    $badges = [
+        'super' => '<span class="badge badge-super me-1">Super Admin</span>',
+        'regular' => '<span class="badge badge-regular me-1">Admin</span>',
+        'limited' => '<span class="badge badge-limited me-1">Limited Admin</span>'
+    ];
+    return $badges[$level] ?? '<span class="badge bg-secondary me-1">Unknown</span>';
+}
+
+function formatPhoneNumber($phone) {
+    if (preg_match('/^(\d{4})(\d{3})(\d{4})$/', $phone, $matches)) {
+        return $matches[1] . ' ' . $matches[2] . ' ' . $matches[3];
+    }
+    return $phone;
+}
+
+function getUserRowClass($status) {
+    $classes = [
+        'active' => 'table-primary-row',
+        'inactive' => '',
+        'banned' => 'table-danger-row',
+        'unverified' => 'table-warning-row'
+    ];
+    return $classes[$status] ?? '';
+}
+
+
+function getBanStatus($status){
+    if($status){
+        $badges = '<span class="badge bg-danger">Banned</span>';
+    }else{
+        $badges = '<span class="badge bg-success">Active</span>';
+    }
+    return $badges ?? '<span class="badge bg-secondary">Unknown</span>';
+}
+
+function getEmailVerificationStatus($status) {
+    if($status){
+        $badges = '<span class="badge bg-success">Verified</span>';
+    }else{
+        $badges = '<span class="badge bg-warning">Unverified</span>';
+    }
+    return $badges ?? '<span class="badge bg-secondary">Unknown</span>';
+}
+
+function getDaysStolen($stolenDate) {
+    $stolen = new DateTime($stolenDate);
+    $now = new DateTime();
+    $interval = $stolen->diff($now);
+    return $interval->days;
+}
+
+function getInvestigationRowClass($status) {
+    $classes = [
+        'pending' => 'table-warning',
+        'investigating' => 'table-info',
+        'cleared' => 'table-success',
+        'penalty' => 'table-danger'
+    ];
+    return $classes[$status] ?? '';
+}
+
+function getInvestigationBadge($status) {
+    $badges = [
+        'pending' => '<span class="badge bg-warning">Pending</span>',
+        'investigating' => '<span class="badge bg-info">Under Investigation</span>',
+        'cleared' => '<span class="badge bg-success">Cleared</span>',
+        'penalty' => '<span class="badge bg-danger">Penalty Applied</span>'
+    ];
+    return $badges[$status] ?? '<span class="badge bg-secondary">Unknown</span>';
+}
+
+function getApprovalRowClass($status) {
+    $classes = [
+        'pending' => 'table-warning',
+        'approved' => 'table-success',
+        'rejected' => 'table-danger',
+        'requires_inspection' => 'table-info'
+    ];
+    return $classes[$status] ?? '';
+}
+
+function getApprovalBadge($status) {
+    $badges = [
+        'pending' => '<span class="badge bg-warning">Pending Approval</span>',
+        'approved' => '<span class="badge bg-success">Approved</span>',
+        'rejected' => '<span class="badge bg-danger">Rejected</span>',
+        'requires_inspection' => '<span class="badge bg-info">Requires Inspection</span>'
+    ];
+    return $badges[$status] ?? '<span class="badge bg-secondary">Unknown</span>';
+}
+
+function getColorHex($colorName) {
+    $colors = [
+        'red' => '#dc3545',
+        'blue' => '#0d6efd',
+        'green' => '#198754',
+        'black' => '#212529',
+        'white' => '#ffffff',
+        'silver' => '#c0c0c0',
+        'gray' => '#6c757d',
+        'yellow' => '#ffc107',
+        'orange' => '#fd7e14',
+        'purple' => '#6f42c1',
+        'pink' => '#d63384',
+        'brown' => '#795548',
+        'gold' => '#ffd700'
+    ];
+    return $colors[strtolower($colorName)] ?? '#6c757d';
+}
+
+
 ?>

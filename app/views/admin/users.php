@@ -14,28 +14,36 @@ ob_start();
 <!-- Stats Overview -->
 <div class="row mb-4">
     <div class="col-md-3">
-        <div class="card stats-card">
-            <div class="stats-number"><?= $pagination['total']; ?></div>
-            <div class="stats-label">Total Users</div>
-        </div>
+       <a href="<?= url('admin/users') ?>"> 
+            <div class="card stats-card">
+                <div class="stats-number"><?= $pagination['total']; ?></div>
+                <div class="stats-label">Total Users</div>
+            </div>
+        </a>
     </div>
     <div class="col-md-3">
-        <div class="card stats-card">
-            <div class="stats-number"><?= $driver_count; ?></div>
-            <div class="stats-label">Drivers</div>
-        </div>
+       <a href="<?= url('admin/view/drivers') ?>"> 
+            <div class="card stats-card">
+                <div class="stats-number"><?= $driver_count; ?></div>
+                <div class="stats-label">Drivers</div>
+            </div>
+        </a>
     </div>
     <div class="col-md-3">
-        <div class="card stats-card">
-            <div class="stats-number"><?= $searcher_count; ?></div>
-            <div class="stats-label">Searchers</div>
-        </div>
+       <a href="<?= url('admin/view/searchers') ?>"> 
+            <div class="card stats-card">
+                <div class="stats-number"><?= $searcher_count; ?></div>
+                <div class="stats-label">Searchers</div>
+            </div>
+        </a>
     </div>
     <div class="col-md-3">
-        <div class="card stats-card">
-            <div class="stats-number"><?= $admin_count; ?></div>
-            <div class="stats-label">Administrators</div>
-        </div>
+       <a href="<?= url('admin/view/admins') ?>"> 
+            <div class="card stats-card">
+                <div class="stats-number"><?= $admin_count; ?></div>
+                <div class="stats-label">Administrators</div>
+            </div>
+        </a>
     </div>
 </div>
 
